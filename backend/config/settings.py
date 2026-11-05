@@ -8,6 +8,7 @@ R2/B2 uploads, and quotas are implemented starting Phase 5 of the main plan.
 import os
 from pathlib import Path
 
+import dj_database_url
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,7 +17,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = os.environ.get(
+    "DJANGO_ALLOWED_HOSTS",
+    # ".vercel.app" (leading dot) matches the domain and every subdomain, so
+    # both preview and production deploy URLs work without per-deploy config.
+    "localhost,127.0.0.1,.vercel.app",
+).split(",")
 
 INSTALLED_APPS = [
     "django.contrib.auth",
@@ -56,16 +62,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB", "vaultkeep"),
-        "USER": os.environ.get("POSTGRES_USER", "vaultkeep"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "vaultkeep"),
-        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
-        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+# DATABASE_URL (e.g. from Neon/Supabase/any managed Postgres) takes priority —
+# that's the one env var most hosting dashboards hand you directly. Falls
+# back to the individual POSTGRES_* vars for local docker-compose-style dev.
+# Until a real DATABASE_URL is set, this still lets the app boot (e.g. for
+# /api/accounts/health/) — only DB-backed requests fail until one is wired up.
+if os.environ.get("DATABASE_URL"):
+    DATABASES = {
+        "default": dj_database_url.parse(os.environ["DATABASE_URL"], conn_max_age=600, ssl_require=True),
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_DB", "vaultkeep"),
+            "USER": os.environ.get("POSTGRES_USER", "vaultkeep"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "vaultkeep"),
+            "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+        }
+    }
 
 AUTH_USER_MODEL = "accounts.User"
 

@@ -68,14 +68,21 @@ fun BackupSetupScreen(
             verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
         ) {
             Text("Back up to USB/SSD", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
+            Text(
+                "Two taps: pick what to back up, then pick where to put it. Each \"Choose folder\" button opens Android's own folder picker — a full-screen system screen, not part of Void — so don't worry if it looks different from the rest of the app.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
             PickerRow(
-                label = "Source folder",
+                label = "1. Source folder — what to back up",
+                description = "The folder on your phone you want copied, e.g. DCIM/Camera for photos, or Download. In the picker that opens, tap through to that folder, then tap \"Use this folder\" at the bottom.",
                 value = uiState.sourceUri,
                 onPick = { sourcePicker.launch(null) },
             )
             PickerRow(
-                label = "Destination (USB/SSD)",
+                label = "2. Destination — where it goes",
+                description = "Make sure your USB/SSD drive is plugged in first. In the picker, it should appear as a storage option on the left (often named after the drive) — tap it, pick or create a folder inside it, then tap \"Use this folder.\"",
                 value = uiState.destinationUri,
                 onPick = { destinationPicker.launch(null) },
             )
@@ -122,7 +129,7 @@ fun BackupSetupScreen(
 }
 
 @Composable
-private fun PickerRow(label: String, value: String?, onPick: () -> Unit) {
+private fun PickerRow(label: String, description: String, value: String?, onPick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -133,9 +140,14 @@ private fun PickerRow(label: String, value: String?, onPick: () -> Unit) {
     ) {
         Text(label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         Text(
-            value?.let { "Selected" } ?: "Not selected",
+            description,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            value?.let { "✓ Selected" } ?: "Not selected yet",
+            style = MaterialTheme.typography.labelLarge,
+            color = if (value != null) VaultColorTokens.Verdigris500 else MaterialTheme.colorScheme.error,
         )
         Button(onClick = onPick) {
             Text(if (value == null) "Choose folder" else "Change folder")

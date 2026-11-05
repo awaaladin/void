@@ -50,9 +50,15 @@ fun NasSetupScreen(
         ) {
             item {
                 Text("Home NAS", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
+                Text(
+                    "Your NAS needs to already be set up and reachable on this Wi-Fi network — Void connects to it, it doesn't create one. Not sure which protocol? Most Synology/QNAP/Nextcloud boxes support WebDAV; plain Windows file sharing uses SMB. Check your NAS's own settings if unsure.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
             item {
+                Text("Protocol", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(VaultTheme.spacing.sm)) {
                     ProtocolChip("WebDAV", NasProtocol.WEBDAV, uiState.protocol, viewModel::onProtocolChanged)
                     ProtocolChip("SMB", NasProtocol.SMB, uiState.protocol, viewModel::onProtocolChanged)
@@ -61,7 +67,7 @@ fun NasSetupScreen(
 
             if (uiState.discovered.isNotEmpty()) {
                 item {
-                    Text("Found on your network", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
+                    Text("Found on your network — tap to fill in", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
                 }
                 items(uiState.discovered) { host ->
                     Row(
@@ -69,11 +75,20 @@ fun NasSetupScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(VaultTheme.radii.sm))
                             .background(MaterialTheme.colorScheme.surface)
+                            .clickable { viewModel.onDiscoveredHostSelected(host) }
                             .padding(VaultTheme.spacing.md),
                     ) {
                         Text("${host.name} — ${host.host}:${host.port}", color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
+            }
+
+            item {
+                Text(
+                    "Nothing found, or want to type it in yourself? Fill these in manually — find them in your NAS's network/sharing settings.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
             item {
