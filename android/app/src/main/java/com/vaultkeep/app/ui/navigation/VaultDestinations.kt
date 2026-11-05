@@ -5,6 +5,7 @@ package com.vaultkeep.app.ui.navigation
  * around the app) so adding a screen later is a compile-time-checked change.
  */
 sealed class VaultDestination(val route: String) {
+    data object Splash : VaultDestination("splash")
     data object Home : VaultDestination("home")
 
     // Added in later phases — present here as placeholders so NavGraph wiring

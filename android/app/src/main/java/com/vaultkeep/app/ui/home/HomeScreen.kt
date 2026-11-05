@@ -3,6 +3,7 @@ package com.vaultkeep.app.ui.home
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.tween
@@ -32,6 +33,7 @@ import com.vaultkeep.app.ui.components.BackupHeroCard
 import com.vaultkeep.app.ui.components.BackupSetToggleRow
 import com.vaultkeep.app.ui.components.BackupSetType
 import com.vaultkeep.app.ui.components.DestinationCard
+import com.vaultkeep.app.ui.components.DestinationKind
 import com.vaultkeep.app.ui.theme.VaultTheme
 
 private fun mediaPermissionFor(type: BackupSetType): String? = when (type) {
@@ -110,7 +112,17 @@ fun HomeScreen(
 
             itemsIndexed(uiState.destinations) { index, destination ->
                 StaggeredEntrance(index = index + 1) {
-                    DestinationCard(model = destination, onClick = { /* wired in Phase 4/5 */ })
+                    DestinationCard(
+                        model = destination,
+                        onClick = {
+                            when (destination.kind) {
+                                DestinationKind.USB -> onOpenBackupSetup()
+                                DestinationKind.NAS -> onOpenNasSetup()
+                                DestinationKind.CLOUD, DestinationKind.DRIVE ->
+                                    Toast.makeText(context, "${destination.displayName} isn't built yet — coming in a later phase", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                    )
                 }
             }
 

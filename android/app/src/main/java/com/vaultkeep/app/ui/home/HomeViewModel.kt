@@ -45,7 +45,7 @@ class HomeViewModel @Inject constructor(
             destinations = listOf(
                 DestinationUiModel(DestinationKind.USB, "USB/SSD", "Set up below", DestinationStatus.Disconnected),
                 DestinationUiModel(DestinationKind.NAS, "Home NAS", "Not built yet (Phase 4)", DestinationStatus.Disconnected),
-                DestinationUiModel(DestinationKind.CLOUD, "VaultKeep Cloud", "Not built yet (Phase 5)", DestinationStatus.Disconnected),
+                DestinationUiModel(DestinationKind.CLOUD, "Void Cloud", "Not built yet (Phase 5)", DestinationStatus.Disconnected),
                 DestinationUiModel(DestinationKind.DRIVE, "Google Drive", "Not built yet (Phase 5)", DestinationStatus.Disconnected),
             ),
             backupSets = listOf(

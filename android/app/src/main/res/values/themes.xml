@@ -3,4 +3,15 @@
     <!-- Minimal XML base theme; all real theming (colors, type, shapes) lives in
          Kotlin design tokens under ui/theme and is applied by Compose at runtime. -->
     <style name="Theme.VaultKeep" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- System cold-start splash (Android 12+ SplashScreen API). Shown before
+         Compose even initializes, so it must stay simple: black background,
+         the eclipse glyph as the branded icon. The richer full-bleed splash
+         with the whole photo lives in Compose (ui/splash/SplashScreen.kt)
+         and takes over immediately after. -->
+    <style name="Theme.VaultKeep.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.VaultKeep</item>
+    </style>
 </resources>

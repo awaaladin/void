@@ -123,7 +123,7 @@ private fun DestinationCardPreview() {
                 onClick = {},
             )
             DestinationCard(
-                DestinationUiModel(DestinationKind.CLOUD, "VaultKeep Cloud", "Free plan — 4.2 GB used", DestinationStatus.Disconnected),
+                DestinationUiModel(DestinationKind.CLOUD, "Void Cloud", "Free plan — 4.2 GB used", DestinationStatus.Disconnected),
                 onClick = {},
             )
             DestinationCard(

@@ -12,6 +12,7 @@ import com.vaultkeep.app.ui.batteryguide.BatteryGuideScreen
 import com.vaultkeep.app.ui.home.HomeScreen
 import com.vaultkeep.app.ui.nassetup.NasSetupScreen
 import com.vaultkeep.app.ui.scheduling.SchedulingScreen
+import com.vaultkeep.app.ui.splash.SplashScreen
 import com.vaultkeep.app.ui.theme.VaultTheme
 
 /**
@@ -24,10 +25,19 @@ fun VaultNavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = VaultDestination.Home.route,
+        startDestination = VaultDestination.Splash.route,
         enterTransition = { fadeIn(animationSpec = androidx.compose.animation.core.tween(180)) },
         exitTransition = { fadeOut(animationSpec = androidx.compose.animation.core.tween(180)) },
     ) {
+        composable(VaultDestination.Splash.route) {
+            SplashScreen(
+                onFinished = {
+                    navController.navigate(VaultDestination.Home.route) {
+                        popUpTo(VaultDestination.Splash.route) { inclusive = true }
+                    }
+                },
+            )
+        }
         composable(VaultDestination.Home.route) {
             HomeScreen(
                 onOpenBackupSetup = { navController.navigate(VaultDestination.BackupSetup.route) },
