@@ -1,5 +1,5 @@
 """
-Django settings for the VaultKeep backend.
+Django settings for the Void backend.
 
 Phase 1 scope: project skeleton only, so the Android app's structure can be
 built against a real backend layout from day one. Auth endpoints, presigned

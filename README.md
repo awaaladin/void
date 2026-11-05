@@ -1,4 +1,4 @@
-# VaultKeep
+# Void
 
 A phone backup app (Android, Kotlin/Compose) that backs up to USB/OTG, a
 Wi-Fi NAS (SMB/WebDAV), our own cloud backend, and the user's Google Drive —
@@ -52,7 +52,7 @@ python manage.py migrate
 python manage.py runserver
 ```
 Then `GET http://127.0.0.1:8000/api/accounts/health/` should return
-`{"status": "ok", "service": "vaultkeep-backend"}`.
+`{"status": "ok", "service": "void-backend"}`.
 
 ## Next phase (2)
 
