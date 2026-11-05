@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Minimal XML base theme; all real theming (colors, type, shapes) lives in
+         Kotlin design tokens under ui/theme and is applied by Compose at runtime. -->
+    <style name="Theme.VaultKeep" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

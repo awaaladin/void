@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Void — Install</title>
+<style>
+  :root {
+    --ink-950: #0B0E12;
+    --ink-900: #12161C;
+    --ink-800: #1B2028;
+    --ink-600: #394049;
+    --ink-200: #AAB1BB;
+    --ink-50: #F2F4F6;
+    --signal-500: #9333EA;
+    --signal-600: #6D28D9;
+    --verdigris-500: #53A692;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--ink-950);
+    color: var(--ink-50);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    max-width: 420px;
+    width: 100%;
+    background: var(--ink-900);
+    border: 1px solid var(--ink-800);
+    border-radius: 20px;
+    padding: 32px 28px;
+    text-align: center;
+  }
+  .glyph {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    border-radius: 16px;
+    background: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  h1 {
+    font-size: 24px;
+    margin: 0 0 6px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+  }
+  p.sub {
+    color: var(--ink-200);
+    font-size: 14px;
+    margin: 0 0 24px;
+    line-height: 1.5;
+  }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 999px;
+    background: var(--signal-500);
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 15px;
+    text-decoration: none;
+    margin-bottom: 10px;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .btn:active { transform: scale(0.97); background: var(--signal-600); }
+  .meta {
+    color: var(--ink-200);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .steps {
+    text-align: left;
+    margin-top: 28px;
+    border-top: 1px solid var(--ink-800);
+    padding-top: 20px;
+  }
+  .steps h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--signal-500);
+    margin: 0 0 12px;
+  }
+  .steps ol {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--ink-200);
+    font-size: 13.5px;
+    line-height: 1.7;
+  }
+  .steps li::marker { color: var(--signal-500); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="glyph">
+      <svg width="30" height="30" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#6D28D9" d="M54,24 A30,30 0 1,0 54,84 A30,30 0 1,0 54,24 Z M54,32 A22,22 0 1,1 54,76 A22,22 0 1,1 54,32 Z" />
+        <path fill="#6D28D9" d="M54,46 A8,8 0 1,0 54,62 A8,8 0 1,0 54,46 Z" />
+        <path fill="#6D28D9" d="M52,54 L52,70 L56,70 L56,54 Z" />
+      </svg>
+    </div>
+    <h1>Void</h1>
+    <p class="sub">Phase 3 debug build — USB/SSD backup with an incremental Room index, WorkManager scheduling, and a real battery-optimization guide.</p>
+
+    <a class="btn" href="void-debug.apk" download>Download Void.apk</a>
+    <div class="meta">Debug build · minSdk 26 · not signed for release</div>
+
+    <div class="steps">
+      <h2>Install on your phone</h2>
+      <ol>
+        <li>Make sure your phone is on the same Wi-Fi as this computer.</li>
+        <li>Tap the Download button above from your phone's browser.</li>
+        <li>Open the downloaded file. Android will ask to allow installing from this source — allow it for your browser app, once.</li>
+        <li>Tap Install, then Open. You'll see Void's normal app icon in your launcher — nothing hidden.</li>
+      </ol>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/*.iml
+android/.idea/
+*.apk
+*.aab
+
+# Django
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.sqlite3
+backend/.env
+
+# Signing material — never committed; only via GitHub Actions secrets
+*.jks
+*.keystore
+keystore.properties
+
+# CI build output downloaded locally
+apk-output/
+
+# Local build/server logs
+android/build_log.txt
+download/server.log
+
+# Misc
+.DS_Store
