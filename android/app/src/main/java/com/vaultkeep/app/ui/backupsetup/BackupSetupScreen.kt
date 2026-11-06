@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -23,6 +22,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vaultkeep.app.ui.components.VoidButton
+import com.vaultkeep.app.ui.components.VoidSecondaryButton
 import com.vaultkeep.app.ui.theme.VaultColorTokens
 import com.vaultkeep.app.ui.theme.VaultTheme
 
@@ -87,17 +88,15 @@ fun BackupSetupScreen(
                 onPick = { destinationPicker.launch(null) },
             )
 
-            Button(
+            VoidButton(
+                text = "Start backup",
                 onClick = viewModel::startBackup,
                 enabled = uiState.canStart,
+                loading = uiState.isRunning,
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(if (uiState.isRunning) "Backing up…" else "Start backup")
-            }
+            )
 
-            Button(onClick = onOpenScheduling, modifier = Modifier.fillMaxWidth()) {
-                Text("Scheduling & battery guide")
-            }
+            VoidSecondaryButton(text = "Scheduling & battery guide", onClick = onOpenScheduling, modifier = Modifier.fillMaxWidth())
 
             if (uiState.isRunning) {
                 val progress = uiState.progress
@@ -149,8 +148,6 @@ private fun PickerRow(label: String, description: String, value: String?, onPick
             style = MaterialTheme.typography.labelLarge,
             color = if (value != null) VaultColorTokens.Verdigris500 else MaterialTheme.colorScheme.error,
         )
-        Button(onClick = onPick) {
-            Text(if (value == null) "Choose folder" else "Change folder")
-        }
+        VoidSecondaryButton(text = if (value == null) "Choose folder" else "Change folder", onClick = onPick)
     }
 }

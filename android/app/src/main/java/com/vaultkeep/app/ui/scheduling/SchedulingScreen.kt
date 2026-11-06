@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -21,6 +20,8 @@ import androidx.compose.ui.draw.clip
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vaultkeep.app.data.local.ScheduleMode
+import com.vaultkeep.app.ui.components.VoidButton
+import com.vaultkeep.app.ui.components.VoidSecondaryButton
 import com.vaultkeep.app.ui.theme.VaultTheme
 
 @Composable
@@ -58,13 +59,9 @@ fun SchedulingScreen(
                 ScheduleModeRow(ScheduleMode.ON_WIFI, "On Wi-Fi only", settings.mode, viewModel::setMode)
             }
 
-            Button(onClick = viewModel::runNow, modifier = Modifier.fillMaxWidth()) {
-                Text("Run backup now")
-            }
+            VoidButton(text = "Run backup now", onClick = viewModel::runNow, modifier = Modifier.fillMaxWidth())
 
-            Button(onClick = onOpenBatteryGuide, modifier = Modifier.fillMaxWidth()) {
-                Text("Battery optimization guide")
-            }
+            VoidSecondaryButton(text = "Battery optimization guide", onClick = onOpenBatteryGuide, modifier = Modifier.fillMaxWidth())
         }
     }
 }

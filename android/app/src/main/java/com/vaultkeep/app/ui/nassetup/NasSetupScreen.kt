@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -27,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vaultkeep.app.domain.model.NasProtocol
+import com.vaultkeep.app.ui.components.VoidButton
 import com.vaultkeep.app.ui.theme.VaultColorTokens
 import com.vaultkeep.app.ui.theme.VaultTheme
 
@@ -142,37 +142,38 @@ fun NasSetupScreen(
             }
 
             item {
-                Button(onClick = viewModel::testConnection, enabled = uiState.canSave, modifier = Modifier.fillMaxWidth()) {
-                    Text("Test connection")
-                }
+                VoidButton(
+                    text = "Test connection",
+                    onClick = viewModel::testConnection,
+                    enabled = uiState.canSave,
+                    loading = uiState.testResult == TestConnectionResult.TESTING,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
             item {
                 when (uiState.testResult) {
-                    TestConnectionResult.TESTING -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     TestConnectionResult.SUCCESS -> Text("Connected", color = VaultColorTokens.Verdigris500)
                     TestConnectionResult.FAILURE -> Text(
                         uiState.testError ?: "Connection failed",
                         color = MaterialTheme.colorScheme.error,
                     )
-                    TestConnectionResult.IDLE -> {}
+                    TestConnectionResult.TESTING, TestConnectionResult.IDLE -> {}
                 }
             }
 
             item {
-                Button(onClick = viewModel::save, enabled = uiState.canSave, modifier = Modifier.fillMaxWidth()) {
-                    Text("Save")
-                }
+                VoidButton(text = "Save", onClick = viewModel::save, enabled = uiState.canSave, modifier = Modifier.fillMaxWidth())
             }
 
             item {
-                Button(
+                VoidButton(
+                    text = "Back up now to this NAS",
                     onClick = viewModel::runBackupNow,
                     enabled = uiState.canSave && !uiState.backupRunning,
+                    loading = uiState.backupRunning,
                     modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(if (uiState.backupRunning) "Backing up…" else "Back up now to this NAS")
-                }
+                )
             }
 
             if (uiState.noSourceConfigured) {

@@ -13,19 +13,29 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Velocity
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,6 +44,8 @@ import com.vaultkeep.app.ui.components.BackupSetToggleRow
 import com.vaultkeep.app.ui.components.BackupSetType
 import com.vaultkeep.app.ui.components.DestinationCard
 import com.vaultkeep.app.ui.components.DestinationKind
+import com.vaultkeep.app.ui.components.VoidButton
+import com.vaultkeep.app.ui.splash.SplashScreen
 import com.vaultkeep.app.ui.theme.VaultTheme
 
 private fun mediaPermissionFor(type: BackupSetType): String? = when (type) {
@@ -47,6 +59,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onOpenBackupSetup: () -> Unit = {},
     onOpenNasSetup: () -> Unit = {},
+    onOpenCloudAuth: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -77,16 +90,21 @@ fun HomeScreen(
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { contentPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-                .padding(horizontal = VaultTheme.spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.xl),
-        ) {
+    var showReloadSplash by remember { mutableStateOf(false) }
+    val pullConnection = rememberPullToReloadConnection(enabled = !showReloadSplash) { showReloadSplash = true }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+        ) { contentPadding ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .nestedScroll(pullConnection)
+                    .padding(contentPadding)
+                    .padding(horizontal = VaultTheme.spacing.lg),
+                verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.xl),
+            ) {
             item {
                 Text(
                     "Void",
@@ -118,7 +136,8 @@ fun HomeScreen(
                             when (destination.kind) {
                                 DestinationKind.USB -> onOpenBackupSetup()
                                 DestinationKind.NAS -> onOpenNasSetup()
-                                DestinationKind.CLOUD, DestinationKind.DRIVE ->
+                                DestinationKind.CLOUD -> onOpenCloudAuth()
+                                DestinationKind.DRIVE ->
                                     Toast.makeText(context, "${destination.displayName} isn't built yet — coming in a later phase", Toast.LENGTH_SHORT).show()
                             }
                         },
@@ -127,15 +146,15 @@ fun HomeScreen(
             }
 
             item {
-                Button(onClick = onOpenBackupSetup, modifier = Modifier.fillMaxWidth()) {
-                    Text("Set up USB/SSD backup")
-                }
+                VoidButton(text = "Set up USB/SSD backup", onClick = onOpenBackupSetup, modifier = Modifier.fillMaxWidth())
             }
 
             item {
-                Button(onClick = onOpenNasSetup, modifier = Modifier.fillMaxWidth()) {
-                    Text("Set up home NAS")
-                }
+                VoidButton(text = "Set up home NAS", onClick = onOpenNasSetup, modifier = Modifier.fillMaxWidth())
+            }
+
+            item {
+                VoidButton(text = "Set up Void Cloud", onClick = onOpenCloudAuth, modifier = Modifier.fillMaxWidth())
             }
 
             item {
@@ -159,6 +178,52 @@ fun HomeScreen(
 
             item {
                 androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(bottom = VaultTheme.spacing.xxxl))
+            }
+            }
+        }
+
+        if (showReloadSplash) {
+            SplashScreen(onFinished = { showReloadSplash = false })
+        }
+    }
+}
+
+/**
+ * Pulling down past the threshold while already at the top of the list
+ * re-shows the ripple splash as a manual reload gesture. Implemented as a
+ * [NestedScrollConnection] rather than Material3's PullToRefresh so the
+ * "refresh" indicator can be the app's own full splash instead of a spinner.
+ */
+@Composable
+private fun rememberPullToReloadConnection(enabled: Boolean, onTrigger: () -> Unit): NestedScrollConnection {
+    val thresholdPx = with(LocalDensity.current) { 96.dp.toPx() }
+    var accumulated by remember { mutableFloatStateOf(0f) }
+    var triggered by remember { mutableStateOf(false) }
+    return remember(enabled) {
+        object : NestedScrollConnection {
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                if (!enabled) return Offset.Zero
+                return when {
+                    source == NestedScrollSource.Drag && available.y > 0f -> {
+                        accumulated += available.y
+                        if (!triggered && accumulated >= thresholdPx) {
+                            triggered = true
+                            onTrigger()
+                        }
+                        Offset(0f, available.y)
+                    }
+                    available.y < 0f -> {
+                        accumulated = 0f
+                        Offset.Zero
+                    }
+                    else -> Offset.Zero
+                }
+            }
+
+            override suspend fun onPreFling(available: Velocity): Velocity {
+                accumulated = 0f
+                triggered = false
+                return Velocity.Zero
             }
         }
     }

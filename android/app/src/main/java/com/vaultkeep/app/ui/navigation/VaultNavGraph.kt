@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.vaultkeep.app.ui.backupsetup.BackupSetupScreen
 import com.vaultkeep.app.ui.batteryguide.BatteryGuideScreen
+import com.vaultkeep.app.ui.cloudauth.CloudAuthScreen
 import com.vaultkeep.app.ui.home.HomeScreen
 import com.vaultkeep.app.ui.nassetup.NasSetupScreen
 import com.vaultkeep.app.ui.scheduling.SchedulingScreen
@@ -42,6 +43,7 @@ fun VaultNavGraph(
             HomeScreen(
                 onOpenBackupSetup = { navController.navigate(VaultDestination.BackupSetup.route) },
                 onOpenNasSetup = { navController.navigate(VaultDestination.NasSetup.route) },
+                onOpenCloudAuth = { navController.navigate(VaultDestination.CloudAuth.route) },
             )
         }
         composable(VaultDestination.BackupSetup.route) {
@@ -55,6 +57,9 @@ fun VaultNavGraph(
         }
         composable(VaultDestination.NasSetup.route) {
             NasSetupScreen(onSaved = { navController.popBackStack() })
+        }
+        composable(VaultDestination.CloudAuth.route) {
+            CloudAuthScreen()
         }
     }
 }
