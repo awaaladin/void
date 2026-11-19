@@ -29,6 +29,9 @@ data class CreateUploadRequest(
 data class CreateUploadResponse(
     @SerialName("file_id") val fileId: String,
     val key: String,
+    /** True when the backend found an existing VERIFIED file with the same plaintext hash and
+     * linked this one to its chunks instead — no chunk upload needed, already done server-side. */
+    val deduped: Boolean = false,
 )
 
 @Serializable

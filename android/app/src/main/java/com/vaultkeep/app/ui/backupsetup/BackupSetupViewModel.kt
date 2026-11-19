@@ -3,6 +3,7 @@ package com.vaultkeep.app.ui.backupsetup
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vaultkeep.app.data.crypto.DestinationEncryptor
 import com.vaultkeep.app.data.destination.UsbDestination
 import com.vaultkeep.app.data.local.BackupSetupPreferences
 import com.vaultkeep.app.domain.model.BackupSetKind
@@ -34,6 +35,7 @@ class BackupSetupViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val preferences: BackupSetupPreferences,
     private val runUsbBackupUseCase: RunUsbBackupUseCase,
+    private val destinationEncryptor: DestinationEncryptor,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BackupSetupUiState())
@@ -69,11 +71,13 @@ class BackupSetupViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRunning = true, summary = null, errorMessage = null)
 
-            val destination = UsbDestination(
-                context = context,
-                id = "usb:$destinationUri",
-                displayName = "USB/SSD destination",
-                treeUri = destinationUri,
+            val destination = destinationEncryptor.wrap(
+                UsbDestination(
+                    context = context,
+                    id = "usb:$destinationUri",
+                    displayName = "USB/SSD destination",
+                    treeUri = destinationUri,
+                ),
             )
 
             try {

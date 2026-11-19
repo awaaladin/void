@@ -12,6 +12,7 @@ import com.vaultkeep.app.ui.batteryguide.BatteryGuideScreen
 import com.vaultkeep.app.ui.cloudauth.CloudAuthScreen
 import com.vaultkeep.app.ui.home.HomeScreen
 import com.vaultkeep.app.ui.nassetup.NasSetupScreen
+import com.vaultkeep.app.ui.passphrase.PassphraseScreen
 import com.vaultkeep.app.ui.scheduling.SchedulingScreen
 import com.vaultkeep.app.ui.splash.SplashScreen
 import com.vaultkeep.app.ui.theme.VaultTheme
@@ -44,6 +45,7 @@ fun VaultNavGraph(
                 onOpenBackupSetup = { navController.navigate(VaultDestination.BackupSetup.route) },
                 onOpenNasSetup = { navController.navigate(VaultDestination.NasSetup.route) },
                 onOpenCloudAuth = { navController.navigate(VaultDestination.CloudAuth.route) },
+                onOpenPassphrase = { navController.navigate(VaultDestination.Passphrase.route) },
             )
         }
         composable(VaultDestination.BackupSetup.route) {
@@ -60,6 +62,9 @@ fun VaultNavGraph(
         }
         composable(VaultDestination.CloudAuth.route) {
             CloudAuthScreen()
+        }
+        composable(VaultDestination.Passphrase.route) {
+            PassphraseScreen()
         }
     }
 }

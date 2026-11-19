@@ -46,15 +46,25 @@ class CloudDestination(
     override suspend fun writeFile(
         relativePath: String,
         sizeBytes: Long,
+        knownSha256: String?,
         openInput: () -> InputStream,
     ): BackupDestination.WriteResult = withContext(Dispatchers.IO) {
         try {
-            val createResponse = api.createUpload(CreateUploadRequest(relativePath, sizeBytes))
+            val createResponse = api.createUpload(CreateUploadRequest(relativePath, sizeBytes, knownSha256.orEmpty()))
             if (!createResponse.isSuccessful) {
                 return@withContext BackupDestination.WriteResult.Failure("Could not start cloud upload: HTTP ${createResponse.code()}")
             }
             val created = createResponse.body()
                 ?: return@withContext BackupDestination.WriteResult.Failure("Empty response starting cloud upload")
+
+            if (created.deduped) {
+                // The backend already linked this file to an existing VERIFIED upload's chunks —
+                // identical content, nothing left to send.
+                return@withContext BackupDestination.WriteResult.Success(
+                    writtenSha256 = knownSha256 ?: "",
+                    bytesWritten = sizeBytes,
+                )
+            }
 
             val digest = MessageDigest.getInstance("SHA-256")
             var chunkIndex = 0

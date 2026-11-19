@@ -45,6 +45,7 @@ import com.vaultkeep.app.ui.components.BackupSetType
 import com.vaultkeep.app.ui.components.DestinationCard
 import com.vaultkeep.app.ui.components.DestinationKind
 import com.vaultkeep.app.ui.components.VoidButton
+import com.vaultkeep.app.ui.components.VoidSecondaryButton
 import com.vaultkeep.app.ui.splash.SplashScreen
 import com.vaultkeep.app.ui.theme.VaultTheme
 
@@ -60,6 +61,7 @@ fun HomeScreen(
     onOpenBackupSetup: () -> Unit = {},
     onOpenNasSetup: () -> Unit = {},
     onOpenCloudAuth: () -> Unit = {},
+    onOpenPassphrase: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -155,6 +157,10 @@ fun HomeScreen(
 
             item {
                 VoidButton(text = "Set up Void Cloud", onClick = onOpenCloudAuth, modifier = Modifier.fillMaxWidth())
+            }
+
+            item {
+                VoidSecondaryButton(text = "Encryption", onClick = onOpenPassphrase, modifier = Modifier.fillMaxWidth())
             }
 
             item {

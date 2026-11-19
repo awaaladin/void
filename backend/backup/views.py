@@ -38,7 +38,18 @@ def _storage_error_response(exc: StorageNotConfigured) -> Response:
 
 
 class CreateUploadView(APIView):
-    """Registers the file (PENDING/UPLOADING) before any chunk arrives."""
+    """
+    Registers the file (PENDING/UPLOADING) before any chunk arrives.
+
+    Dedup: if the client already knows this file's (plaintext) sha256 and
+    we already have a VERIFIED file with that same hash for this user,
+    link the new file straight to the existing chunks and mark it VERIFIED
+    immediately — no bytes need to move at all, encrypted or not (the
+    hash is always the plaintext hash, computed before encryption, same
+    content in = same hash out regardless of the random IV encryption
+    used this time). Scoped to `user=request.user` only: never reuse
+    another user's objects, even if the content happens to match.
+    """
 
     permission_classes = [IsAuthenticated]
 
@@ -48,6 +59,15 @@ class CreateUploadView(APIView):
         data = serializer.validated_data
 
         key = CloudFile.key_for(request.user.id, data["relative_path"])
+        sha256 = data.get("sha256", "")
+
+        dedup_source = None
+        if sha256:
+            dedup_source = (
+                CloudFile.objects.filter(user=request.user, sha256=sha256, status=CloudFile.Status.VERIFIED)
+                .exclude(key=key)
+                .first()
+            )
 
         cloud_file, created = CloudFile.objects.update_or_create(
             key=key,
@@ -55,7 +75,7 @@ class CreateUploadView(APIView):
                 "user": request.user,
                 "relative_path": data["relative_path"],
                 "size_bytes": data["size_bytes"],
-                "sha256": data.get("sha256", ""),
+                "sha256": sha256,
                 "status": CloudFile.Status.UPLOADING,
                 "completed_at": None,
             },
@@ -66,7 +86,26 @@ class CreateUploadView(APIView):
             delete_blobs(stale)
             cloud_file.chunks.all().delete()
 
-        return Response({"file_id": str(cloud_file.id), "key": key}, status=status.HTTP_201_CREATED)
+        if dedup_source:
+            CloudFileChunk.objects.bulk_create(
+                [
+                    CloudFileChunk(
+                        file=cloud_file,
+                        chunk_index=chunk.chunk_index,
+                        blob_pathname=chunk.blob_pathname,
+                        size_bytes=chunk.size_bytes,
+                        sha256=chunk.sha256,
+                    )
+                    for chunk in dedup_source.chunks.all()
+                ],
+            )
+            cloud_file.status = CloudFile.Status.VERIFIED
+            cloud_file.size_bytes = dedup_source.size_bytes
+            cloud_file.completed_at = timezone.now()
+            cloud_file.save(update_fields=["status", "size_bytes", "completed_at"])
+            return Response({"file_id": str(cloud_file.id), "key": key, "deduped": True}, status=status.HTTP_201_CREATED)
+
+        return Response({"file_id": str(cloud_file.id), "key": key, "deduped": False}, status=status.HTTP_201_CREATED)
 
 
 class ChunkUploadView(APIView):

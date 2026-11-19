@@ -41,6 +41,7 @@ class UsbDestination(
     override suspend fun writeFile(
         relativePath: String,
         sizeBytes: Long,
+        knownSha256: String?,
         openInput: () -> InputStream,
     ): BackupDestination.WriteResult = withContext(Dispatchers.IO) {
         try {

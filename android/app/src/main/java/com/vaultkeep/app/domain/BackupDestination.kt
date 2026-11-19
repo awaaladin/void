@@ -26,8 +26,20 @@ interface BackupDestination {
      * Writes [sizeBytes] from [openInput] to [relativePath], creating any
      * intermediate folders. Returns the SHA-256 of the bytes actually
      * written, so the caller can verify it against the source hash.
+     *
+     * [knownSha256] is the caller's already-computed plaintext hash, if it
+     * has one (the USB/NAS/Cloud use case always does — it hashes the
+     * source file before calling this). Most destinations ignore it; Cloud
+     * uses it for upload-time dedup. It's always the *plaintext* hash, even
+     * when [EncryptingBackupDestination][com.vaultkeep.app.data.crypto.EncryptingBackupDestination]
+     * is in front of a destination — encryption never sees or changes it.
      */
-    suspend fun writeFile(relativePath: String, sizeBytes: Long, openInput: () -> InputStream): WriteResult
+    suspend fun writeFile(
+        relativePath: String,
+        sizeBytes: Long,
+        knownSha256: String? = null,
+        openInput: () -> InputStream,
+    ): WriteResult
 
     sealed class WriteResult {
         data class Success(val writtenSha256: String, val bytesWritten: Long) : WriteResult()

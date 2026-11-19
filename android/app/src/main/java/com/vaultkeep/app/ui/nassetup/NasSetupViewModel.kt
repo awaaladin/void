@@ -3,6 +3,7 @@ package com.vaultkeep.app.ui.nassetup
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vaultkeep.app.data.crypto.DestinationEncryptor
 import com.vaultkeep.app.data.destination.SmbDestination
 import com.vaultkeep.app.data.destination.WebDavDestination
 import com.vaultkeep.app.data.local.BackupSetupPreferences
@@ -53,6 +54,7 @@ class NasSetupViewModel @Inject constructor(
     private val discovery: NasDiscovery,
     private val backupSetupPreferences: BackupSetupPreferences,
     private val runBackupUseCase: RunUsbBackupUseCase,
+    private val destinationEncryptor: DestinationEncryptor,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(loadInitialState())
@@ -170,7 +172,7 @@ class NasSetupViewModel @Inject constructor(
                 backupError = null,
                 noSourceConfigured = false,
             )
-            val destination = destinationFor(config)
+            val destination = destinationEncryptor.wrap(destinationFor(config))
             try {
                 val summary = runBackupUseCase.execute(
                     sourceTreeUri = Uri.parse(sourceUriString),

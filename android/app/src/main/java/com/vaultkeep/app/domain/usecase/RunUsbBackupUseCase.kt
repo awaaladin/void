@@ -101,7 +101,7 @@ class RunUsbBackupUseCase @Inject constructor(
             }
 
             val sourceHash = hashOf(doc)
-            val result = destination.writeFile(relativePath, doc.length()) {
+            val result = destination.writeFile(relativePath, doc.length(), sourceHash) {
                 context.contentResolver.openInputStream(doc.uri)
                     ?: error("Could not open source file $relativePath")
             }

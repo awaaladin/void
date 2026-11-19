@@ -3,6 +3,7 @@ package com.vaultkeep.app.ui.cloudauth
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vaultkeep.app.data.crypto.DestinationEncryptor
 import com.vaultkeep.app.data.destination.CloudDestination
 import com.vaultkeep.app.data.local.BackupSetupPreferences
 import com.vaultkeep.app.data.local.CloudAuthPreferences
@@ -43,6 +44,7 @@ class CloudAuthViewModel @Inject constructor(
     private val authPreferences: CloudAuthPreferences,
     private val backupSetupPreferences: BackupSetupPreferences,
     private val runBackupUseCase: RunUsbBackupUseCase,
+    private val destinationEncryptor: DestinationEncryptor,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CloudAuthUiState(signedIn = authPreferences.isSignedIn()))
@@ -122,7 +124,7 @@ class CloudAuthViewModel @Inject constructor(
                 return@launch
             }
             _uiState.value = _uiState.value.copy(backupRunning = true, backupSummary = null, backupError = null, noSourceConfigured = false)
-            val destination = CloudDestination(api = api)
+            val destination = destinationEncryptor.wrap(CloudDestination(api = api))
             try {
                 val summary = runBackupUseCase.execute(
                     sourceTreeUri = Uri.parse(sourceUriString),
