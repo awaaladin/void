@@ -21,15 +21,16 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
-/** The client used for calls to our own API — carries the Authorization header and auto-refreshes on 401. */
+/**
+ * The client used for calls to our own API — carries the Authorization
+ * header and auto-refreshes on 401. Also carries chunked Void Cloud
+ * uploads now (see CloudDestination): unlike the original S3 design,
+ * chunk uploads go to our own backend, not a third-party presigned URL,
+ * so there's no longer a separate unauthenticated client to keep.
+ */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class ApiHttpClient
-
-/** The client used for presigned-URL PUTs straight to R2/B2 — must never carry our API's Authorization header. */
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class UploadHttpClient
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -77,16 +78,6 @@ object NetworkModule {
             .writeTimeout(120, TimeUnit.SECONDS) // uploads can be slow on mobile networks
             .build()
     }
-
-    /** Plain, un-intercepted client for presigned-URL PUTs — those go straight to R2/B2, never our API, and must never carry our Authorization header. */
-    @Provides
-    @Singleton
-    @UploadHttpClient
-    fun provideUploadHttpClient(): OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS)
-        .writeTimeout(120, TimeUnit.SECONDS)
-        .build()
 
     private fun refreshAccessToken(authPreferences: CloudAuthPreferences, json: Json): String? {
         val refresh = authPreferences.refreshToken() ?: return null

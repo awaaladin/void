@@ -16,14 +16,10 @@ class CreateUploadSerializer(serializers.Serializer):
     sha256 = serializers.CharField(max_length=64, required=False, allow_blank=True)
 
 
-class PresignPartSerializer(serializers.Serializer):
-    file_id = serializers.UUIDField()
-    part_number = serializers.IntegerField(min_value=1, max_value=10000)
-
-
 class CompleteUploadSerializer(serializers.Serializer):
     file_id = serializers.UUIDField()
-    parts = serializers.ListField(child=serializers.DictField(), allow_empty=False)
+    total_chunks = serializers.IntegerField(min_value=0)
+    sha256 = serializers.CharField(max_length=64, required=False, allow_blank=True)
 
 
 class AbortUploadSerializer(serializers.Serializer):

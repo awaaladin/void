@@ -1,27 +1,31 @@
 package com.vaultkeep.app.data.destination
 
+import com.vaultkeep.app.data.remote.AbortUploadRequest
 import com.vaultkeep.app.data.remote.CompleteUploadRequest
-import com.vaultkeep.app.data.remote.CompletedPart
 import com.vaultkeep.app.data.remote.CreateUploadRequest
-import com.vaultkeep.app.data.remote.PresignPartRequest
 import com.vaultkeep.app.data.remote.VoidApi
 import com.vaultkeep.app.domain.BackupDestination
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.InputStream
 import java.security.MessageDigest
 
 /**
- * Uploads directly to Void Cloud (R2/B2 behind our Django backend) via
- * presigned S3 multipart upload — file bytes go straight from this device
- * to the bucket; our API only ever hands out URLs and bookkeeping.
+ * Uploads to Void Cloud (Vercel Blob behind our Django backend) in chunks.
+ *
+ * Not a direct phone-to-bucket upload like USB/NAS/the original S3 design:
+ * Vercel Blob's Python SDK has no client-direct presigned-multipart flow
+ * (that's JS-SDK-only), and every request to a Vercel Function is capped
+ * at 4.5MB regardless of plan. So each chunk is POSTed to our own backend,
+ * which stores it as its own private Blob object — see backup/storage.py
+ * and backup/views.py on the Django side for the full reasoning. A dropped
+ * connection only costs that one chunk's retry, same resumability property
+ * the S3 design had, just implemented a level up.
  */
 class CloudDestination(
     private val api: VoidApi,
-    private val uploadClient: OkHttpClient,
     override val id: String = "cloud:void",
     override val displayName: String = "Void Cloud",
 ) : BackupDestination {
@@ -53,9 +57,7 @@ class CloudDestination(
                 ?: return@withContext BackupDestination.WriteResult.Failure("Empty response starting cloud upload")
 
             val digest = MessageDigest.getInstance("SHA-256")
-            val completedParts = mutableListOf<CompletedPart>()
-            var partNumber = 1
-            var bytesWritten = 0L
+            var chunkIndex = 0
             val buffer = ByteArray(CHUNK_SIZE_BYTES)
 
             openInput().use { input ->
@@ -64,49 +66,34 @@ class CloudDestination(
                     if (read <= 0) break
                     digest.update(buffer, 0, read)
 
-                    val presignResponse = api.presignPart(PresignPartRequest(created.fileId, partNumber))
-                    if (!presignResponse.isSuccessful) {
+                    val chunkBody = buffer.copyOfRange(0, read).toRequestBody(OCTET_STREAM)
+                    val chunkResponse = api.uploadChunk(created.fileId, chunkIndex, chunkBody)
+                    if (!chunkResponse.isSuccessful) {
                         abortQuietly(created.fileId)
                         return@withContext BackupDestination.WriteResult.Failure(
-                            "Could not get an upload URL for part $partNumber: HTTP ${presignResponse.code()}",
+                            "Chunk $chunkIndex upload failed: HTTP ${chunkResponse.code()}",
                         )
                     }
-                    val url = presignResponse.body()?.url
-                        ?: return@withContext BackupDestination.WriteResult.Failure("Missing presigned URL for part $partNumber")
-
-                    val putRequest = Request.Builder()
-                        .url(url)
-                        .put(buffer.toRequestBody(null, 0, read))
-                        .build()
-                    val putResponse = uploadClient.newCall(putRequest).execute()
-                    val eTag = putResponse.use { resp ->
-                        if (!resp.isSuccessful) null else resp.header("ETag")
-                    }
-                    if (eTag == null) {
-                        abortQuietly(created.fileId)
-                        return@withContext BackupDestination.WriteResult.Failure("Part $partNumber upload to storage failed")
-                    }
-
-                    completedParts += CompletedPart(partNumber = partNumber, eTag = eTag.trim('"'))
-                    bytesWritten += read
-                    partNumber++
+                    chunkIndex++
                 }
             }
 
-            val completeResponse = api.completeUpload(CompleteUploadRequest(created.fileId, completedParts))
+            val hashHex = digest.digest().joinToString("") { "%02x".format(it) }
+            val completeResponse = api.completeUpload(CompleteUploadRequest(created.fileId, chunkIndex, hashHex))
             if (!completeResponse.isSuccessful) {
                 return@withContext BackupDestination.WriteResult.Failure("Could not finalize cloud upload: HTTP ${completeResponse.code()}")
             }
+            val completed = completeResponse.body()
+                ?: return@withContext BackupDestination.WriteResult.Failure("Empty response completing cloud upload")
 
-            val hashHex = digest.digest().joinToString("") { "%02x".format(it) }
-            BackupDestination.WriteResult.Success(writtenSha256 = hashHex, bytesWritten = bytesWritten)
+            BackupDestination.WriteResult.Success(writtenSha256 = hashHex, bytesWritten = completed.sizeBytes)
         } catch (e: Exception) {
             BackupDestination.WriteResult.Failure(e.message ?: "Cloud upload failed")
         }
     }
 
     private suspend fun abortQuietly(fileId: String) {
-        runCatching { api.abortUpload(com.vaultkeep.app.data.remote.AbortUploadRequest(fileId)) }
+        runCatching { api.abortUpload(AbortUploadRequest(fileId)) }
     }
 
     /** InputStream.read(buffer) may return fewer bytes than requested even mid-stream; loop until the buffer is full or the stream ends. */
@@ -121,7 +108,8 @@ class CloudDestination(
     }
 
     companion object {
-        // Comfortably above S3's 5MB minimum multipart part size.
-        private const val CHUNK_SIZE_BYTES = 8 * 1024 * 1024
+        // Stays under Vercel Functions' 4.5MB per-request body cap with headroom to spare.
+        private const val CHUNK_SIZE_BYTES = 4 * 1024 * 1024
+        private val OCTET_STREAM = "application/octet-stream".toMediaType()
     }
 }

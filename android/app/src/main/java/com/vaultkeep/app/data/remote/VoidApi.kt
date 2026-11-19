@@ -1,10 +1,11 @@
 package com.vaultkeep.app.data.remote
 
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
-import retrofit2.http.Path
+import retrofit2.http.Query
 
 /** Retrofit interface for the Void Cloud (Django) backend. */
 interface VoidApi {
@@ -20,8 +21,13 @@ interface VoidApi {
     @POST("api/backup/uploads/create/")
     suspend fun createUpload(@Body body: CreateUploadRequest): Response<CreateUploadResponse>
 
-    @POST("api/backup/uploads/presign-part/")
-    suspend fun presignPart(@Body body: PresignPartRequest): Response<PresignPartResponse>
+    /** Body is raw chunk bytes (<=4MB) — not JSON, see RawBinaryParser on the backend. */
+    @POST("api/backup/uploads/chunk/")
+    suspend fun uploadChunk(
+        @Query("file_id") fileId: String,
+        @Query("chunk_index") chunkIndex: Int,
+        @Body body: RequestBody,
+    ): Response<ChunkUploadResponse>
 
     @POST("api/backup/uploads/complete/")
     suspend fun completeUpload(@Body body: CompleteUploadRequest): Response<CloudFileDto>
@@ -31,9 +37,6 @@ interface VoidApi {
 
     @GET("api/backup/files/")
     suspend fun listFiles(): Response<List<CloudFileDto>>
-
-    @GET("api/backup/files/{fileId}/presign-download/")
-    suspend fun presignDownload(@Path("fileId") fileId: String): Response<PresignDownloadResponse>
 
     @GET("api/backup/usage/")
     suspend fun usage(): Response<UsageResponse>

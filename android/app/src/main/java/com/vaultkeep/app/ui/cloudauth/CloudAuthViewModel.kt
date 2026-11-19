@@ -9,7 +9,6 @@ import com.vaultkeep.app.data.local.CloudAuthPreferences
 import com.vaultkeep.app.data.remote.LoginRequest
 import com.vaultkeep.app.data.remote.RegisterRequest
 import com.vaultkeep.app.data.remote.VoidApi
-import com.vaultkeep.app.di.UploadHttpClient
 import com.vaultkeep.app.domain.model.BackupSetKind
 import com.vaultkeep.app.domain.usecase.BackupProgressEvent
 import com.vaultkeep.app.domain.usecase.BackupRunSummary
@@ -20,7 +19,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import okhttp3.OkHttpClient
 import javax.inject.Inject
 
 data class CloudAuthUiState(
@@ -45,7 +43,6 @@ class CloudAuthViewModel @Inject constructor(
     private val authPreferences: CloudAuthPreferences,
     private val backupSetupPreferences: BackupSetupPreferences,
     private val runBackupUseCase: RunUsbBackupUseCase,
-    @UploadHttpClient private val uploadHttpClient: OkHttpClient,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CloudAuthUiState(signedIn = authPreferences.isSignedIn()))
@@ -125,7 +122,7 @@ class CloudAuthViewModel @Inject constructor(
                 return@launch
             }
             _uiState.value = _uiState.value.copy(backupRunning = true, backupSummary = null, backupError = null, noSourceConfigured = false)
-            val destination = CloudDestination(api = api, uploadClient = uploadHttpClient)
+            val destination = CloudDestination(api = api)
             try {
                 val summary = runBackupUseCase.execute(
                     sourceTreeUri = Uri.parse(sourceUriString),

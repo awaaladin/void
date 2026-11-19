@@ -29,28 +29,19 @@ data class CreateUploadRequest(
 data class CreateUploadResponse(
     @SerialName("file_id") val fileId: String,
     val key: String,
-    @SerialName("upload_id") val uploadId: String,
 )
 
 @Serializable
-data class PresignPartRequest(
-    @SerialName("file_id") val fileId: String,
-    @SerialName("part_number") val partNumber: Int,
-)
-
-@Serializable
-data class PresignPartResponse(val url: String)
-
-@Serializable
-data class CompletedPart(
-    @SerialName("PartNumber") val partNumber: Int,
-    @SerialName("ETag") val eTag: String,
+data class ChunkUploadResponse(
+    @SerialName("chunk_index") val chunkIndex: Int,
+    @SerialName("size_bytes") val sizeBytes: Long,
 )
 
 @Serializable
 data class CompleteUploadRequest(
     @SerialName("file_id") val fileId: String,
-    val parts: List<CompletedPart>,
+    @SerialName("total_chunks") val totalChunks: Int,
+    val sha256: String = "",
 )
 
 @Serializable
@@ -66,9 +57,6 @@ data class CloudFileDto(
     @SerialName("created_at") val createdAt: String,
     @SerialName("completed_at") val completedAt: String? = null,
 )
-
-@Serializable
-data class PresignDownloadResponse(val url: String)
 
 @Serializable
 data class UsageResponse(

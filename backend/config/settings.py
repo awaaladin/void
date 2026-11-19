@@ -1,9 +1,9 @@
 """
 Django settings for the Void backend.
 
-Phase 1 scope: project skeleton only, so the Android app's structure can be
-built against a real backend layout from day one. Auth endpoints, presigned
-R2/B2 uploads, and quotas are implemented starting Phase 5 of the main plan.
+Auth (username/password + JWT) and Void Cloud storage (chunked uploads to
+Vercel Blob — see backup/storage.py for why it's chunked rather than a
+direct S3-style presigned multipart) are both live as of Phase 5.
 """
 import os
 from pathlib import Path
@@ -100,11 +100,8 @@ REST_FRAMEWORK = {
     ),
 }
 
-# Phase 5: S3-compatible storage (Cloudflare R2 / Backblaze B2). Files never
-# pass through this server — these are only used to sign presigned URLs.
-S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL", "")
-S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID", "")
-S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY", "")
-S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME", "")
+# Phase 5: Void Cloud storage via Vercel Blob (backup/storage.py). Credentials
+# resolve automatically from BLOB_READ_WRITE_TOKEN in the environment — no
+# settings entry needed here, see backup/storage.py for why.
 
 CORS_ALLOWED_ORIGINS: list[str] = []
