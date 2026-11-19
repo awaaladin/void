@@ -112,10 +112,10 @@
       <img src="void-logo.png?v=2" alt="Void" />
     </div>
     <h1>Void</h1>
-    <p class="sub">Phase 5 debug build — USB/SSD, NAS (SMB/WebDAV), and Void Cloud backup. Built on GitHub Actions CI, hosted as a GitHub Release.</p>
+    <p class="sub">Phase 6 debug build — USB/SSD, NAS (SMB/WebDAV), Void Cloud backup (with dedup), and AES-256 encryption on by default. Built on GitHub Actions CI, hosted as a GitHub Release.</p>
 
-    <a class="btn" href="https://github.com/awaaladin/void/releases/download/v0.2.0/void-debug.apk" download>Download Void.apk</a>
-    <div class="meta">Debug build · minSdk 26 · not signed for release · v0.2.0</div>
+    <a class="btn" href="https://github.com/awaaladin/void/releases/download/v0.3.0/void-debug.apk" download>Download Void.apk</a>
+    <div class="meta">Debug build · minSdk 26 · not signed for release · v0.3.0</div>
 
     <div class="steps">
       <h2>Install on your phone</h2>
@@ -124,6 +124,7 @@
         <li>Open the downloaded file. Android will ask to allow installing from this source — allow it for your browser app, once.</li>
         <li><strong>If Void is already installed from an earlier test, uninstall it first</strong> (long-press the icon → Uninstall), then install this one fresh. Updating in place can leave Android's launcher showing the old cached icon.</li>
         <li>Tap Install, then Open. If you had Void open in your recent apps already, swipe it away first — reopening a backgrounded app skips the loading screen since it doesn't restart.</li>
+        <li>Open the "Encryption" section on Home and set a passphrase before your first backup — it's on by default, and <strong>a lost passphrase can't be recovered</strong>.</li>
       </ol>
     </div>
   </div>
