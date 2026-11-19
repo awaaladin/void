@@ -4,10 +4,15 @@ from .models import CloudFile
 
 
 class CloudFileSerializer(serializers.ModelSerializer):
+    chunk_count = serializers.SerializerMethodField()
+
     class Meta:
         model = CloudFile
-        fields = ["id", "relative_path", "size_bytes", "sha256", "status", "created_at", "completed_at"]
+        fields = ["id", "relative_path", "size_bytes", "sha256", "status", "created_at", "completed_at", "chunk_count"]
         read_only_fields = fields
+
+    def get_chunk_count(self, obj: CloudFile) -> int:
+        return obj.chunks.count()
 
 
 class CreateUploadSerializer(serializers.Serializer):

@@ -30,6 +30,12 @@ def upload_chunk(pathname: str, data: bytes) -> blob.PutResult:
     return blob.put_blob(pathname, data, access="private", allow_overwrite=True)
 
 
+def download_chunk(pathname: str) -> bytes:
+    """Downloads one chunk's full bytes. Raises blob.BlobNotFoundError if it's missing."""
+    _check_configured()
+    return blob.get_blob(pathname, access="private").body
+
+
 def delete_blobs(pathnames: list[str]) -> None:
     """Best-effort cleanup (e.g. aborting an upload) — deleting a missing blob is not an error."""
     _check_configured()

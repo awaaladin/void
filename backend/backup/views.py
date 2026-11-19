@@ -1,6 +1,7 @@
 import hashlib
 
 from django.db.models import Sum
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
@@ -16,7 +17,7 @@ from .serializers import (
     CompleteUploadSerializer,
     CreateUploadSerializer,
 )
-from .storage import StorageNotConfigured, delete_blobs, upload_chunk
+from .storage import StorageNotConfigured, delete_blobs, download_chunk, upload_chunk
 
 # Vercel Functions cap every request body at 4.5MB platform-wide; 4MB per
 # chunk leaves headroom for headers so we never brush that ceiling.
@@ -209,6 +210,39 @@ class AbortUploadView(APIView):
         cloud_file.status = CloudFile.Status.FAILED
         cloud_file.save(update_fields=["status"])
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class DownloadChunkView(APIView):
+    """
+    GET /api/backup/uploads/chunk/?file_id=...&chunk_index=...
+    Returns the raw chunk bytes for restore — the download-side mirror of
+    ChunkUploadView. The Android client reassembles chunks 0..chunk_count-1
+    (chunk_count comes from CloudFileSerializer) into the original file.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        file_id = request.query_params.get("file_id")
+        chunk_index_raw = request.query_params.get("chunk_index")
+        if not file_id or chunk_index_raw is None:
+            return Response({"error": "file_id and chunk_index query params are required."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            chunk_index = int(chunk_index_raw)
+        except ValueError:
+            return Response({"error": "chunk_index must be an integer."}, status=status.HTTP_400_BAD_REQUEST)
+
+        cloud_file = get_object_or_404(CloudFile, id=file_id, user=request.user)
+        chunk = get_object_or_404(CloudFileChunk, file=cloud_file, chunk_index=chunk_index)
+
+        try:
+            data = download_chunk(chunk.blob_pathname)
+        except StorageNotConfigured as exc:
+            return _storage_error_response(exc)
+        except Exception as exc:
+            return Response({"error": f"Chunk download failed: {exc}"}, status=status.HTTP_502_BAD_GATEWAY)
+
+        return HttpResponse(data, content_type="application/octet-stream")
 
 
 class ListFilesView(APIView):

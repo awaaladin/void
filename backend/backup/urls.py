@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path("uploads/create/", views.CreateUploadView.as_view(), name="create-upload"),
     path("uploads/chunk/", views.ChunkUploadView.as_view(), name="upload-chunk"),
+    path("uploads/chunk/download/", views.DownloadChunkView.as_view(), name="download-chunk"),
     path("uploads/complete/", views.CompleteUploadView.as_view(), name="complete-upload"),
     path("uploads/abort/", views.AbortUploadView.as_view(), name="abort-upload"),
     path("files/", views.ListFilesView.as_view(), name="list-files"),
