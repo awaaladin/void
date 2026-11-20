@@ -1,14 +1,17 @@
 package com.vaultkeep.app.data.destination
 
 import com.vaultkeep.app.data.remote.AbortUploadRequest
+import com.vaultkeep.app.data.remote.ApiErrorBody
 import com.vaultkeep.app.data.remote.CompleteUploadRequest
 import com.vaultkeep.app.data.remote.CreateUploadRequest
 import com.vaultkeep.app.data.remote.VoidApi
 import com.vaultkeep.app.domain.BackupDestination
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
+import retrofit2.Response
 import java.io.InputStream
 import java.security.MessageDigest
 
@@ -52,7 +55,7 @@ class CloudDestination(
         try {
             val createResponse = api.createUpload(CreateUploadRequest(relativePath, sizeBytes, knownSha256.orEmpty()))
             if (!createResponse.isSuccessful) {
-                return@withContext BackupDestination.WriteResult.Failure("Could not start cloud upload: HTTP ${createResponse.code()}")
+                return@withContext BackupDestination.WriteResult.Failure(serverErrorMessage(createResponse, "Could not start cloud upload"))
             }
             val created = createResponse.body()
                 ?: return@withContext BackupDestination.WriteResult.Failure("Empty response starting cloud upload")
@@ -81,7 +84,7 @@ class CloudDestination(
                     if (!chunkResponse.isSuccessful) {
                         abortQuietly(created.fileId)
                         return@withContext BackupDestination.WriteResult.Failure(
-                            "Chunk $chunkIndex upload failed: HTTP ${chunkResponse.code()}",
+                            serverErrorMessage(chunkResponse, "Chunk $chunkIndex upload failed"),
                         )
                     }
                     chunkIndex++
@@ -91,7 +94,7 @@ class CloudDestination(
             val hashHex = digest.digest().joinToString("") { "%02x".format(it) }
             val completeResponse = api.completeUpload(CompleteUploadRequest(created.fileId, chunkIndex, hashHex))
             if (!completeResponse.isSuccessful) {
-                return@withContext BackupDestination.WriteResult.Failure("Could not finalize cloud upload: HTTP ${completeResponse.code()}")
+                return@withContext BackupDestination.WriteResult.Failure(serverErrorMessage(completeResponse, "Could not finalize cloud upload"))
             }
             val completed = completeResponse.body()
                 ?: return@withContext BackupDestination.WriteResult.Failure("Empty response completing cloud upload")
@@ -104,6 +107,14 @@ class CloudDestination(
 
     private suspend fun abortQuietly(fileId: String) {
         runCatching { api.abortUpload(AbortUploadRequest(fileId)) }
+    }
+
+    /** Backend errors (quota rejections especially) come back as {"error": "..."} — surface
+     * that real message instead of a bare HTTP code whenever the body parses. */
+    private fun serverErrorMessage(response: Response<*>, fallbackPrefix: String): String {
+        val body = response.errorBody()?.string()
+        val parsed = body?.let { runCatching { json.decodeFromString<ApiErrorBody>(it) }.getOrNull() }
+        return parsed?.error ?: "$fallbackPrefix: HTTP ${response.code()}"
     }
 
     /** InputStream.read(buffer) may return fewer bytes than requested even mid-stream; loop until the buffer is full or the stream ends. */
@@ -121,5 +132,6 @@ class CloudDestination(
         // Stays under Vercel Functions' 4.5MB per-request body cap with headroom to spare.
         private const val CHUNK_SIZE_BYTES = 4 * 1024 * 1024
         private val OCTET_STREAM = "application/octet-stream".toMediaType()
+        private val json = Json { ignoreUnknownKeys = true }
     }
 }

@@ -101,17 +101,31 @@ private fun SignedInContent(uiState: CloudAuthUiState, viewModel: CloudAuthViewM
             val used = uiState.usedBytes
             val quota = uiState.quotaBytes
             if (used != null && quota != null && quota > 0) {
+                val fraction = (used.toFloat() / quota.toFloat()).coerceIn(0f, 1f)
+                val barColor = when {
+                    fraction >= 1f -> MaterialTheme.colorScheme.error
+                    fraction >= 0.9f -> VaultColorTokens.Ember500
+                    else -> VaultColorTokens.Signal500
+                }
                 Column(verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.xs)) {
                     Text(
-                        "${formatBytes(used)} used",
+                        "${formatBytes(used)} of ${formatBytes(quota)} used",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onBackground,
                     )
                     LinearProgressIndicator(
-                        progress = { (used.toFloat() / quota.toFloat()).coerceIn(0f, 1f) },
-                        color = VaultColorTokens.Signal500,
+                        progress = { fraction },
+                        color = barColor,
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    if (fraction >= 0.9f) {
+                        Text(
+                            if (fraction >= 1f) "You're over quota — new uploads will be rejected until you free up space."
+                            else "Getting close to your quota.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = barColor,
+                        )
+                    }
                 }
             }
         }
