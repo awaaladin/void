@@ -18,5 +18,17 @@ class User(AbstractUser):
         default="free",
     )
 
+    # Void isn't selling storage tiers (no billing is wired up) — both plans get the same
+    # generous, not-a-hard-product-cap quota. Kept as a per-plan dict rather than one constant
+    # so a real "paid" tier can get a different number later without touching call sites.
+    PLAN_QUOTAS_BYTES = {
+        "free": 10 * 1024 ** 4,
+        "paid": 10 * 1024 ** 4,
+    }
+
+    @property
+    def quota_bytes(self) -> int:
+        return self.PLAN_QUOTAS_BYTES.get(self.plan, self.PLAN_QUOTAS_BYTES["free"])
+
     def __str__(self) -> str:
         return self.email or self.username

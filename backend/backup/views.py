@@ -61,6 +61,25 @@ class CreateUploadView(APIView):
 
         key = CloudFile.key_for(request.user.id, data["relative_path"])
         sha256 = data.get("sha256", "")
+        size_bytes = data["size_bytes"]
+
+        # Re-uploading an existing path (retry, or a changed file at the same path) replaces
+        # that path's own prior contribution to `used`, so only count it once here.
+        already_counted = CloudFile.objects.filter(
+            user=request.user, key=key, status=CloudFile.Status.VERIFIED,
+        ).aggregate(total=Sum("size_bytes"))["total"] or 0
+        used = _used_bytes(request.user) - already_counted
+        if used + size_bytes > request.user.quota_bytes:
+            return Response(
+                {
+                    "error": (
+                        f"This upload would put you over your storage quota "
+                        f"({used + size_bytes} of {request.user.quota_bytes} bytes). "
+                        "Free up space or delete some backed-up files first."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         dedup_source = None
         if sha256:
@@ -253,18 +272,22 @@ class ListFilesView(APIView):
         return Response(CloudFileSerializer(files, many=True).data)
 
 
+def _used_bytes(user) -> int:
+    return CloudFile.objects.filter(user=user, status=CloudFile.Status.VERIFIED).aggregate(
+        total=Sum("size_bytes"),
+    )["total"] or 0
+
+
 class UsageView(APIView):
     """
-    Storage used so far, plus the plan's quota. Default quota is
-    intentionally generous (10TB, not a hard product cap) — Void is meant
-    to hold as much as a user throws at it.
+    Storage used so far, plus the plan's quota (see User.quota_bytes) — a
+    generous default, not a hard product cap. Void doesn't sell storage
+    tiers; this exists so the app can warn a user before they genuinely
+    run out, not to gate features.
     """
 
     permission_classes = [IsAuthenticated]
-    DEFAULT_QUOTA_BYTES = 10 * 1024 * 1024 * 1024 * 1024
 
     def get(self, request):
-        used = CloudFile.objects.filter(user=request.user, status=CloudFile.Status.VERIFIED).aggregate(
-            total=Sum("size_bytes"),
-        )["total"] or 0
-        return Response({"used_bytes": used, "quota_bytes": self.DEFAULT_QUOTA_BYTES, "plan": request.user.plan})
+        used = _used_bytes(request.user)
+        return Response({"used_bytes": used, "quota_bytes": request.user.quota_bytes, "plan": request.user.plan})
