@@ -59,6 +59,7 @@ data class CloudFileDto(
     val status: String,
     @SerialName("created_at") val createdAt: String,
     @SerialName("completed_at") val completedAt: String? = null,
+    @SerialName("chunk_count") val chunkCount: Int = 0,
 )
 
 @Serializable

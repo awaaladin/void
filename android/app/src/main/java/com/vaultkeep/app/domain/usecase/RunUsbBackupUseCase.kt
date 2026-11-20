@@ -3,6 +3,7 @@ package com.vaultkeep.app.domain.usecase
 import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
+import com.vaultkeep.app.data.crypto.EncryptingBackupDestination
 import com.vaultkeep.app.data.local.dao.BackupRecordDao
 import com.vaultkeep.app.data.local.dao.FileEntryDao
 import com.vaultkeep.app.data.local.entity.BackupRecordEntity
@@ -58,6 +59,8 @@ class RunUsbBackupUseCase @Inject constructor(
 
         val files = mutableListOf<Pair<DocumentFile, String>>()
         collectFiles(root, relativePathPrefix = "", out = files)
+
+        val encrypted = destination is EncryptingBackupDestination
 
         var copied = 0
         var skipped = 0
@@ -136,6 +139,7 @@ class RunUsbBackupUseCase @Inject constructor(
                             remoteKey = relativePath,
                             lastError = if (verified) null else "Hash mismatch after copy",
                             updatedAt = now,
+                            encrypted = encrypted,
                         ),
                     )
                     if (verified) {
@@ -165,6 +169,7 @@ class RunUsbBackupUseCase @Inject constructor(
                             remoteKey = null,
                             lastError = result.message,
                             updatedAt = now,
+                            encrypted = encrypted,
                         ),
                     )
                     onProgress(

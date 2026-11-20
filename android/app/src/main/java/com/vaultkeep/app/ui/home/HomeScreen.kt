@@ -62,6 +62,8 @@ fun HomeScreen(
     onOpenNasSetup: () -> Unit = {},
     onOpenCloudAuth: () -> Unit = {},
     onOpenPassphrase: () -> Unit = {},
+    onOpenRestore: () -> Unit = {},
+    onOpenStorageInsights: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -161,6 +163,14 @@ fun HomeScreen(
 
             item {
                 VoidSecondaryButton(text = "Encryption", onClick = onOpenPassphrase, modifier = Modifier.fillMaxWidth())
+            }
+
+            item {
+                VoidSecondaryButton(text = "Restore files", onClick = onOpenRestore, modifier = Modifier.fillMaxWidth())
+            }
+
+            item {
+                VoidSecondaryButton(text = "Storage insights", onClick = onOpenStorageInsights, modifier = Modifier.fillMaxWidth())
             }
 
             item {

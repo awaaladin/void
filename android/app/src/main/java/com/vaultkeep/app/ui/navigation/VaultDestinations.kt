@@ -18,5 +18,6 @@ sealed class VaultDestination(val route: String) {
     data object CloudAuth : VaultDestination("cloud_auth")
     data object Passphrase : VaultDestination("passphrase")
     data object Restore : VaultDestination("restore")
+    data object StorageInsights : VaultDestination("storage_insights")
     data object Settings : VaultDestination("settings")
 }

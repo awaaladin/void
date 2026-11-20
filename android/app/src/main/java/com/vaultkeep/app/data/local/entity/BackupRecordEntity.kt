@@ -33,4 +33,7 @@ data class BackupRecordEntity(
     val chunksDone: Int = 0,
     val lastError: String? = null,
     val updatedAt: Long,
+    /** Whether this specific write was encrypted — recorded per-record since the
+     * encryption setting can change later and older records must still be read correctly. */
+    val encrypted: Boolean = false,
 )
