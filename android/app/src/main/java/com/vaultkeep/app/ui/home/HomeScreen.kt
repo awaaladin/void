@@ -3,7 +3,6 @@ package com.vaultkeep.app.ui.home
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.tween
@@ -64,6 +63,7 @@ fun HomeScreen(
     onOpenPassphrase: () -> Unit = {},
     onOpenRestore: () -> Unit = {},
     onOpenStorageInsights: () -> Unit = {},
+    onOpenGoogleDriveSetup: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -141,8 +141,7 @@ fun HomeScreen(
                                 DestinationKind.USB -> onOpenBackupSetup()
                                 DestinationKind.NAS -> onOpenNasSetup()
                                 DestinationKind.CLOUD -> onOpenCloudAuth()
-                                DestinationKind.DRIVE ->
-                                    Toast.makeText(context, "${destination.displayName} isn't built yet — coming in a later phase", Toast.LENGTH_SHORT).show()
+                                DestinationKind.DRIVE -> onOpenGoogleDriveSetup()
                             }
                         },
                     )
@@ -159,6 +158,10 @@ fun HomeScreen(
 
             item {
                 VoidButton(text = "Set up Void Cloud", onClick = onOpenCloudAuth, modifier = Modifier.fillMaxWidth())
+            }
+
+            item {
+                VoidButton(text = "Set up Google Drive", onClick = onOpenGoogleDriveSetup, modifier = Modifier.fillMaxWidth())
             }
 
             item {

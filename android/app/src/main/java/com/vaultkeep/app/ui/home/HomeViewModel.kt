@@ -44,9 +44,9 @@ class HomeViewModel @Inject constructor(
             hero = BackupHeroState.Empty,
             destinations = listOf(
                 DestinationUiModel(DestinationKind.USB, "USB/SSD", "Set up below", DestinationStatus.Disconnected),
-                DestinationUiModel(DestinationKind.NAS, "Home NAS", "Not built yet (Phase 4)", DestinationStatus.Disconnected),
+                DestinationUiModel(DestinationKind.NAS, "Home NAS", "Set up below", DestinationStatus.Disconnected),
                 DestinationUiModel(DestinationKind.CLOUD, "Void Cloud", "Sign in to use it", DestinationStatus.Disconnected),
-                DestinationUiModel(DestinationKind.DRIVE, "Google Drive", "Not built yet (Phase 5)", DestinationStatus.Disconnected),
+                DestinationUiModel(DestinationKind.DRIVE, "Google Drive", "Connect to use it", DestinationStatus.Disconnected),
             ),
             backupSets = listOf(
                 BackupSetUiModel(BackupSetType.PHOTOS, "Photos", "Checking…", enabled = false),

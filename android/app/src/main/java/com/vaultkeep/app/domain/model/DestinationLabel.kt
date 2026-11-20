@@ -12,5 +12,6 @@ fun destinationLabel(destinationId: String): String = when {
     destinationId.startsWith("smb:") -> "Home NAS (SMB) — ${destinationId.removePrefix("smb:")}"
     destinationId.startsWith("webdav:") -> "Home NAS (WebDAV) — ${destinationId.removePrefix("webdav:")}"
     destinationId.startsWith("cloud:") -> "Void Cloud"
+    destinationId.startsWith("drive:") -> "Google Drive"
     else -> destinationId
 }

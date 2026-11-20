@@ -4,15 +4,18 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vaultkeep.app.data.auth.DriveAuthManager
 import com.vaultkeep.app.data.crypto.CryptoKeyManager
 import com.vaultkeep.app.data.crypto.DecryptingBackupSource
 import com.vaultkeep.app.data.destination.CloudSource
+import com.vaultkeep.app.data.destination.GoogleDriveSource
 import com.vaultkeep.app.data.destination.SmbSource
 import com.vaultkeep.app.data.destination.UsbSource
 import com.vaultkeep.app.data.destination.WebDavSource
 import com.vaultkeep.app.data.local.NasCredentialsStore
 import com.vaultkeep.app.data.local.dao.BackupRecordDao
 import com.vaultkeep.app.data.local.dao.RestorableFileRow
+import com.vaultkeep.app.data.remote.DriveApi
 import com.vaultkeep.app.data.remote.VoidApi
 import com.vaultkeep.app.domain.BackupSource
 import com.vaultkeep.app.domain.model.NasProtocol
@@ -52,6 +55,8 @@ class RestoreViewModel @Inject constructor(
     private val restoreUseCase: RestoreUseCase,
     private val nasCredentialsStore: NasCredentialsStore,
     private val voidApi: VoidApi,
+    private val driveApi: DriveApi,
+    private val driveAuthManager: DriveAuthManager,
     private val keyManager: CryptoKeyManager,
 ) : ViewModel() {
 
@@ -127,7 +132,7 @@ class RestoreViewModel @Inject constructor(
         }
     }
 
-    private fun sourceFor(destinationId: String): BackupSource = when {
+    private suspend fun sourceFor(destinationId: String): BackupSource = when {
         destinationId.startsWith("usb:") -> UsbSource(
             context = context,
             id = destinationId,
@@ -144,6 +149,16 @@ class RestoreViewModel @Inject constructor(
             WebDavSource(config, destinationId)
         }
         destinationId.startsWith("cloud:") -> CloudSource(voidApi, destinationId)
+        destinationId.startsWith("drive:") -> {
+            // Restore intentionally doesn't wire up its own consent UI: if Drive was ever
+            // connected via "Set up Google Drive" this session or earlier, Play Services
+            // returns a fresh token here non-interactively. If it hasn't, ask for that
+            // instead of launching a second consent flow from inside Restore.
+            val outcome = driveAuthManager.authorize()
+            val token = (outcome as? DriveAuthManager.AuthorizeOutcome.Authorized)?.accessToken
+                ?: error("Open 'Set up Google Drive' and connect it first, then come back to restore.")
+            GoogleDriveSource(driveApi, token, destinationId)
+        }
         else -> error("Unknown destination: $destinationId")
     }
 }

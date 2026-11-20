@@ -26,6 +26,11 @@ class DestinationLabelTest {
     }
 
     @Test
+    fun `drive destination gets a fixed friendly label`() {
+        assertEquals("Google Drive", destinationLabel("drive:void"))
+    }
+
+    @Test
     fun `unknown prefix falls back to the raw id instead of crashing`() {
         assertEquals("something:else", destinationLabel("something:else"))
     }

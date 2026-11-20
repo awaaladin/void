@@ -140,6 +140,14 @@ dependencies {
     // Image loading
     implementation("io.coil-kt:coil-compose:2.6.0")
 
+    // Google Drive destination: Identity Services' Authorization API resolves an
+    // access token against the Android OAuth client registered for this app's
+    // package name + signing SHA-1 (see debug.keystore) — no client secret or
+    // client ID string needed in app code. Drive itself is called as plain REST
+    // (via the existing Retrofit/OkHttp stack), not the heavier google-api-client.
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.13.11")

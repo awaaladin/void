@@ -15,6 +15,7 @@ sealed class VaultDestination(val route: String) {
     data object Scheduling : VaultDestination("scheduling")
     data object BatteryGuide : VaultDestination("battery_guide")
     data object NasSetup : VaultDestination("nas_setup")
+    data object GoogleDriveSetup : VaultDestination("google_drive_setup")
     data object CloudAuth : VaultDestination("cloud_auth")
     data object Passphrase : VaultDestination("passphrase")
     data object Restore : VaultDestination("restore")
