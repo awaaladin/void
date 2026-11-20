@@ -49,9 +49,10 @@ class GoogleDriveDestination(
         }.getOrDefault(false)
     }
 
-    override suspend fun testConnection() = withContext(Dispatchers.IO) {
+    override suspend fun testConnection(): Unit = withContext(Dispatchers.IO) {
         resolver.rootFolder(createIfMissing = true)
             ?: error("Could not create or find the \"Void Backups\" folder in Drive")
+        Unit
     }
 
     override suspend fun writeFile(
