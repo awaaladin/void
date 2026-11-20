@@ -19,6 +19,10 @@ backend/.env
 *.jks
 *.keystore
 keystore.properties
+# Exception: the debug-only keystore is intentionally committed for a stable, CI-reproducible
+# SHA-1 (needed for Google Sign-In's Android OAuth client). Its password is Android's own
+# public, standard debug credential ("android"/"android") — there is no real secret here.
+!android/app/debug.keystore
 
 # CI build output downloaded locally
 apk-output/
@@ -29,3 +33,5 @@ download/server.log
 
 # Misc
 .DS_Store
+
+.vercel

@@ -24,8 +24,26 @@ android {
         buildConfigField("String", "VOID_CLOUD_BASE_URL", "\"https://voidcentral.vercel.app/\"")
     }
 
+    signingConfigs {
+        getByName("debug") {
+            // Fixed (committed) debug keystore so the signing SHA-1 is stable across every
+            // machine and every CI run — required for Google Sign-In's Android OAuth client,
+            // which is registered against one specific SHA-1. The default auto-generated
+            // ~/.android/debug.keystore is unique per machine (and regenerated fresh on each
+            // ephemeral CI runner), which would silently break sign-in on every rebuild.
+            // This keystore holds no real secret: "android"/"android" are Android's own
+            // standard, publicly-documented debug keystore credentials, same convention
+            // Android Studio uses for its own auto-generated one.
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         debug {
+            signingConfig = signingConfigs.getByName("debug")
             // Base URL for the Django backend during local development.
             // Override per-machine in local.properties -> read via BuildConfig if needed later.
             isMinifyEnabled = false
