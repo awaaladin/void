@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -21,6 +23,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vaultkeep.app.ui.components.ScreenHeader
+import com.vaultkeep.app.ui.components.StaggeredEntrance
 import com.vaultkeep.app.ui.components.VoidButton
 import com.vaultkeep.app.ui.components.VoidSecondaryButton
 import com.vaultkeep.app.ui.theme.VaultColorTokens
@@ -38,7 +42,9 @@ fun PassphraseScreen(viewModel: PassphraseViewModel = hiltViewModel()) {
                 .padding(VaultTheme.spacing.lg),
             verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
         ) {
-            Text("Encryption", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
+            StaggeredEntrance(index = 0) {
+                ScreenHeader(icon = Icons.Outlined.Lock, tint = VaultColorTokens.Signal500, title = "Encryption")
+            }
 
             EncryptionToggleRow(enabled = uiState.encryptionEnabled, onToggle = viewModel::setEncryptionEnabled)
 

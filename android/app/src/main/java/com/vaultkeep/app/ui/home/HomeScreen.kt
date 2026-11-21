@@ -5,9 +5,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,6 +40,7 @@ import com.vaultkeep.app.ui.components.BackupSetToggleRow
 import com.vaultkeep.app.ui.components.BackupSetType
 import com.vaultkeep.app.ui.components.DestinationCard
 import com.vaultkeep.app.ui.components.DestinationKind
+import com.vaultkeep.app.ui.components.StaggeredEntrance
 import com.vaultkeep.app.ui.components.VoidButton
 import com.vaultkeep.app.ui.components.VoidSecondaryButton
 import com.vaultkeep.app.ui.splash.SplashScreen
@@ -245,30 +243,5 @@ private fun rememberPullToReloadConnection(enabled: Boolean, onTrigger: () -> Un
                 return Velocity.Zero
             }
         }
-    }
-}
-
-
-/**
- * Staggered list entrance: each item fades + slides up with a short delay
- * proportional to its index. Pure Compose AnimatedVisibility-style entrance
- * via a one-shot LaunchedEffect-driven visibility flag, so it never replays
- * on recomposition (only on first composition of this node).
- */
-@Composable
-private fun StaggeredEntrance(index: Int, content: @Composable () -> Unit) {
-    var visible by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(30L * index)
-        visible = true
-    }
-    androidx.compose.animation.AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(animationSpec = tween(220)) + slideInVertically(
-            animationSpec = tween(220),
-            initialOffsetY = { it / 4 },
-        ),
-    ) {
-        content()
     }
 }

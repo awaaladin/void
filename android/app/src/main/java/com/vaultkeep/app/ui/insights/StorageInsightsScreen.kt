@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -22,6 +24,8 @@ import androidx.compose.ui.draw.clip
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vaultkeep.app.domain.model.destinationLabel
+import com.vaultkeep.app.ui.components.ScreenHeader
+import com.vaultkeep.app.ui.components.StaggeredEntrance
 import com.vaultkeep.app.ui.components.VoidButton
 import com.vaultkeep.app.ui.theme.VaultColorTokens
 import com.vaultkeep.app.ui.theme.VaultTheme
@@ -47,15 +51,19 @@ fun StorageInsightsScreen(viewModel: StorageInsightsViewModel = hiltViewModel())
                 .padding(VaultTheme.spacing.lg),
             verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
         ) {
-            Text("Storage insights", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
+            StaggeredEntrance(index = 0) {
+                ScreenHeader(icon = Icons.Outlined.BarChart, tint = VaultColorTokens.Signal500, title = "Storage insights")
+            }
 
-            SummaryCard(
-                title = "Everything you've backed up",
-                lines = listOf(
-                    "${uiState.overall.fileCount} file(s), ${formatBytes(uiState.overall.totalBytes)}",
-                    "Last backup: " + (uiState.overall.lastBackupAt?.let { dateFormat.format(Date(it)) } ?: "never"),
-                ),
-            )
+            StaggeredEntrance(index = 1) {
+                SummaryCard(
+                    title = "Everything you've backed up",
+                    lines = listOf(
+                        "${uiState.overall.fileCount} file(s), ${formatBytes(uiState.overall.totalBytes)}",
+                        "Last backup: " + (uiState.overall.lastBackupAt?.let { dateFormat.format(Date(it)) } ?: "never"),
+                    ),
+                )
+            }
 
             Text("By destination", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
             if (uiState.byDestination.isEmpty()) {

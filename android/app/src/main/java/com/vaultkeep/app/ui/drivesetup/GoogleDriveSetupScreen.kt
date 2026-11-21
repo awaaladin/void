@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -18,6 +20,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vaultkeep.app.ui.components.ScreenHeader
+import com.vaultkeep.app.ui.components.StaggeredEntrance
 import com.vaultkeep.app.ui.components.VoidButton
 import com.vaultkeep.app.ui.theme.VaultColorTokens
 import com.vaultkeep.app.ui.theme.VaultTheme
@@ -55,12 +59,14 @@ fun GoogleDriveSetupScreen(viewModel: GoogleDriveSetupViewModel = hiltViewModel(
                 .padding(VaultTheme.spacing.lg),
             verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
         ) {
-            Text("Google Drive", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
-            Text(
-                "Backs up into a \"Void Backups\" folder in your own Drive. Void only ever sees files and folders it creates there — nothing else in your Drive.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            StaggeredEntrance(index = 0) {
+                ScreenHeader(
+                    icon = Icons.Outlined.Folder,
+                    tint = VaultColorTokens.Signal500,
+                    title = "Google Drive",
+                    subtitle = "Backs up into a \"Void Backups\" folder in your own Drive. Void only ever sees files and folders it creates there — nothing else in your Drive.",
+                )
+            }
 
             if (!uiState.isAuthorized) {
                 VoidButton(

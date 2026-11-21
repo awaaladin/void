@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +19,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vaultkeep.app.ui.components.ScreenHeader
+import com.vaultkeep.app.ui.components.StaggeredEntrance
 import com.vaultkeep.app.ui.components.VoidButton
 import com.vaultkeep.app.ui.components.VoidSecondaryButton
 import com.vaultkeep.app.ui.theme.VaultColorTokens
@@ -49,11 +53,11 @@ private fun SignedOutContent(uiState: CloudAuthUiState, viewModel: CloudAuthView
             .padding(VaultTheme.spacing.lg),
         verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
     ) {
-        Text("Void Cloud", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
-        Text(
-            "Our own backend, backed by S3-compatible object storage — no practical cap on how much you can keep here. Sign in or create an account to use it as a backup destination.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        ScreenHeader(
+            icon = Icons.Outlined.Cloud,
+            tint = VaultColorTokens.Signal500,
+            title = "Void Cloud",
+            subtitle = "Our own backend, backed by S3-compatible object storage — no practical cap on how much you can keep here. Sign in or create an account to use it as a backup destination.",
         )
 
         OutlinedTextField(
@@ -94,7 +98,9 @@ private fun SignedInContent(uiState: CloudAuthUiState, viewModel: CloudAuthViewM
         verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
     ) {
         item {
-            Text("Void Cloud", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
+            StaggeredEntrance(index = 0) {
+                ScreenHeader(icon = Icons.Outlined.Cloud, tint = VaultColorTokens.Signal500, title = "Void Cloud")
+            }
         }
 
         item {

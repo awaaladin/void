@@ -23,9 +23,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Dns
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vaultkeep.app.domain.model.NasProtocol
+import com.vaultkeep.app.ui.components.ScreenHeader
+import com.vaultkeep.app.ui.components.StaggeredEntrance
 import com.vaultkeep.app.ui.components.VoidButton
 import com.vaultkeep.app.ui.theme.VaultColorTokens
 import com.vaultkeep.app.ui.theme.VaultTheme
@@ -49,19 +53,25 @@ fun NasSetupScreen(
             verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
         ) {
             item {
-                Text("Home NAS", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
-                Text(
-                    "Your NAS needs to already be set up and reachable on this Wi-Fi network — Void connects to it, it doesn't create one. Not sure which protocol? Most Synology/QNAP/Nextcloud boxes support WebDAV; plain Windows file sharing uses SMB. Check your NAS's own settings if unsure.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                StaggeredEntrance(index = 0) {
+                    ScreenHeader(
+                        icon = Icons.Outlined.Dns,
+                        tint = VaultColorTokens.Signal500,
+                        title = "Home NAS",
+                        subtitle = "Your NAS needs to already be set up and reachable on this Wi-Fi network — Void connects to it, it doesn't create one. Not sure which protocol? Most Synology/QNAP/Nextcloud boxes support WebDAV; plain Windows file sharing uses SMB. Check your NAS's own settings if unsure.",
+                    )
+                }
             }
 
             item {
-                Text("Protocol", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(horizontalArrangement = Arrangement.spacedBy(VaultTheme.spacing.sm)) {
-                    ProtocolChip("WebDAV", NasProtocol.WEBDAV, uiState.protocol, viewModel::onProtocolChanged)
-                    ProtocolChip("SMB", NasProtocol.SMB, uiState.protocol, viewModel::onProtocolChanged)
+                StaggeredEntrance(index = 1) {
+                    Column {
+                        Text("Protocol", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Row(horizontalArrangement = Arrangement.spacedBy(VaultTheme.spacing.sm)) {
+                            ProtocolChip("WebDAV", NasProtocol.WEBDAV, uiState.protocol, viewModel::onProtocolChanged)
+                            ProtocolChip("SMB", NasProtocol.SMB, uiState.protocol, viewModel::onProtocolChanged)
+                        }
+                    }
                 }
             }
 

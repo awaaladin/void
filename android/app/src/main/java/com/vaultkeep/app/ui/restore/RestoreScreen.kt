@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +28,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vaultkeep.app.ui.components.ScreenHeader
+import com.vaultkeep.app.ui.components.StaggeredEntrance
 import com.vaultkeep.app.ui.components.VoidButton
 import com.vaultkeep.app.ui.components.VoidSecondaryButton
 import com.vaultkeep.app.ui.theme.VaultColorTokens
@@ -70,7 +74,9 @@ fun RestoreScreen(viewModel: RestoreViewModel = hiltViewModel()) {
                 .padding(VaultTheme.spacing.lg),
             verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
         ) {
-            Text("Restore", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
+            StaggeredEntrance(index = 0) {
+                ScreenHeader(icon = Icons.Outlined.History, tint = VaultColorTokens.Signal500, title = "Restore")
+            }
 
             if (uiState.destinations.isEmpty()) {
                 Text(
@@ -86,14 +92,16 @@ fun RestoreScreen(viewModel: RestoreViewModel = hiltViewModel()) {
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            uiState.destinations.forEach { destination ->
-                DestinationRow(
-                    label = destination.label,
-                    fileCount = destination.fileCount,
-                    totalBytes = destination.totalBytes,
-                    selected = destination.id == uiState.selectedDestinationId,
-                    onClick = { viewModel.selectDestination(destination.id) },
-                )
+            uiState.destinations.forEachIndexed { index, destination ->
+                StaggeredEntrance(index = index + 1) {
+                    DestinationRow(
+                        label = destination.label,
+                        fileCount = destination.fileCount,
+                        totalBytes = destination.totalBytes,
+                        selected = destination.id == uiState.selectedDestinationId,
+                        onClick = { viewModel.selectDestination(destination.id) },
+                    )
+                }
             }
 
             if (uiState.selectedDestinationId != null) {
