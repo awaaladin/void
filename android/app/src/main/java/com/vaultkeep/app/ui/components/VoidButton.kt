@@ -87,7 +87,7 @@ fun VoidSecondaryButton(
         enabled = enabled,
         interactionSource = interactionSource,
         shape = RoundedCornerShape(VaultTheme.radii.pill),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        border = BorderStroke(1.dp, VaultColorTokens.Signal500.copy(alpha = 0.5f)),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
         modifier = modifier
             .height(52.dp)
