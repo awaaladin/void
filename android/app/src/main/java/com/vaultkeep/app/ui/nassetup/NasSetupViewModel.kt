@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.vaultkeep.app.data.crypto.DestinationEncryptor
 import com.vaultkeep.app.data.destination.SmbDestination
 import com.vaultkeep.app.data.destination.WebDavDestination
+import com.vaultkeep.app.data.local.BackupSetsPreferences
 import com.vaultkeep.app.data.local.BackupSetupPreferences
 import com.vaultkeep.app.data.local.NasCredentialsStore
 import com.vaultkeep.app.data.local.NasDiscovery
@@ -16,7 +17,7 @@ import com.vaultkeep.app.domain.model.NasConfig
 import com.vaultkeep.app.domain.model.NasProtocol
 import com.vaultkeep.app.domain.usecase.BackupProgressEvent
 import com.vaultkeep.app.domain.usecase.BackupRunSummary
-import com.vaultkeep.app.domain.usecase.RunUsbBackupUseCase
+import com.vaultkeep.app.domain.usecase.RunAllEnabledBackupsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,7 +54,8 @@ class NasSetupViewModel @Inject constructor(
     private val credentialsStore: NasCredentialsStore,
     private val discovery: NasDiscovery,
     private val backupSetupPreferences: BackupSetupPreferences,
-    private val runBackupUseCase: RunUsbBackupUseCase,
+    private val backupSetsPreferences: BackupSetsPreferences,
+    private val runAllEnabledBackupsUseCase: RunAllEnabledBackupsUseCase,
     private val destinationEncryptor: DestinationEncryptor,
 ) : ViewModel() {
 
@@ -162,7 +164,9 @@ class NasSetupViewModel @Inject constructor(
         val config = buildConfig() ?: return
         viewModelScope.launch {
             val sourceUriString = backupSetupPreferences.sourceUri.first()
-            if (sourceUriString == null) {
+            val anySetEnabled = backupSetsPreferences.isEnabled(BackupSetKind.PHOTOS).first() ||
+                backupSetsPreferences.isEnabled(BackupSetKind.VIDEOS).first()
+            if (sourceUriString == null && !anySetEnabled) {
                 _uiState.value = _uiState.value.copy(noSourceConfigured = true)
                 return@launch
             }
@@ -174,10 +178,9 @@ class NasSetupViewModel @Inject constructor(
             )
             val destination = destinationEncryptor.wrap(destinationFor(config))
             try {
-                val summary = runBackupUseCase.execute(
-                    sourceTreeUri = Uri.parse(sourceUriString),
+                val summary = runAllEnabledBackupsUseCase.execute(
+                    sourceTreeUri = sourceUriString?.let(Uri::parse),
                     destination = destination,
-                    setType = BackupSetKind.CUSTOM,
                     onProgress = { event -> _uiState.value = _uiState.value.copy(backupProgress = event) },
                 )
                 _uiState.value = _uiState.value.copy(backupRunning = false, backupSummary = summary)

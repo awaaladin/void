@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vaultkeep.app.data.crypto.DestinationEncryptor
 import com.vaultkeep.app.data.destination.CloudDestination
+import com.vaultkeep.app.data.local.BackupSetsPreferences
 import com.vaultkeep.app.data.local.BackupSetupPreferences
 import com.vaultkeep.app.data.local.CloudAuthPreferences
 import com.vaultkeep.app.data.remote.LoginRequest
@@ -13,7 +14,7 @@ import com.vaultkeep.app.data.remote.VoidApi
 import com.vaultkeep.app.domain.model.BackupSetKind
 import com.vaultkeep.app.domain.usecase.BackupProgressEvent
 import com.vaultkeep.app.domain.usecase.BackupRunSummary
-import com.vaultkeep.app.domain.usecase.RunUsbBackupUseCase
+import com.vaultkeep.app.domain.usecase.RunAllEnabledBackupsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,7 +44,8 @@ class CloudAuthViewModel @Inject constructor(
     private val api: VoidApi,
     private val authPreferences: CloudAuthPreferences,
     private val backupSetupPreferences: BackupSetupPreferences,
-    private val runBackupUseCase: RunUsbBackupUseCase,
+    private val backupSetsPreferences: BackupSetsPreferences,
+    private val runAllEnabledBackupsUseCase: RunAllEnabledBackupsUseCase,
     private val destinationEncryptor: DestinationEncryptor,
 ) : ViewModel() {
 
@@ -115,21 +117,23 @@ class CloudAuthViewModel @Inject constructor(
         }
     }
 
-    /** Reuses the same source folder from the USB setup flow, same pattern as NAS. */
+    /** Backs up the manually-picked source folder (shared with USB/NAS setup) plus whichever
+     * of Photos/Videos are enabled on Home, all to Void Cloud. */
     fun runBackupNow() {
         viewModelScope.launch {
             val sourceUriString = backupSetupPreferences.sourceUri.first()
-            if (sourceUriString == null) {
+            val anySetEnabled = backupSetsPreferences.isEnabled(BackupSetKind.PHOTOS).first() ||
+                backupSetsPreferences.isEnabled(BackupSetKind.VIDEOS).first()
+            if (sourceUriString == null && !anySetEnabled) {
                 _uiState.value = _uiState.value.copy(noSourceConfigured = true)
                 return@launch
             }
             _uiState.value = _uiState.value.copy(backupRunning = true, backupSummary = null, backupError = null, noSourceConfigured = false)
             val destination = destinationEncryptor.wrap(CloudDestination(api = api))
             try {
-                val summary = runBackupUseCase.execute(
-                    sourceTreeUri = Uri.parse(sourceUriString),
+                val summary = runAllEnabledBackupsUseCase.execute(
+                    sourceTreeUri = sourceUriString?.let(Uri::parse),
                     destination = destination,
-                    setType = BackupSetKind.CUSTOM,
                     onProgress = { event -> _uiState.value = _uiState.value.copy(backupProgress = event) },
                 )
                 _uiState.value = _uiState.value.copy(backupRunning = false, backupSummary = summary)

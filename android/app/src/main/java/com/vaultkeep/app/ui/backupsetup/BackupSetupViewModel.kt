@@ -6,10 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.vaultkeep.app.data.crypto.DestinationEncryptor
 import com.vaultkeep.app.data.destination.UsbDestination
 import com.vaultkeep.app.data.local.BackupSetupPreferences
-import com.vaultkeep.app.domain.model.BackupSetKind
 import com.vaultkeep.app.domain.usecase.BackupProgressEvent
 import com.vaultkeep.app.domain.usecase.BackupRunSummary
-import com.vaultkeep.app.domain.usecase.RunUsbBackupUseCase
+import com.vaultkeep.app.domain.usecase.RunAllEnabledBackupsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +33,7 @@ data class BackupSetupUiState(
 class BackupSetupViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val preferences: BackupSetupPreferences,
-    private val runUsbBackupUseCase: RunUsbBackupUseCase,
+    private val runAllEnabledBackupsUseCase: RunAllEnabledBackupsUseCase,
     private val destinationEncryptor: DestinationEncryptor,
 ) : ViewModel() {
 
@@ -81,10 +80,9 @@ class BackupSetupViewModel @Inject constructor(
             )
 
             try {
-                val summary = runUsbBackupUseCase.execute(
+                val summary = runAllEnabledBackupsUseCase.execute(
                     sourceTreeUri = sourceUri,
                     destination = destination,
-                    setType = BackupSetKind.CUSTOM,
                     onProgress = { event ->
                         _uiState.value = _uiState.value.copy(progress = event)
                     },

@@ -149,7 +149,7 @@ private fun SignedInContent(uiState: CloudAuthUiState, viewModel: CloudAuthViewM
         if (uiState.noSourceConfigured) {
             item {
                 Text(
-                    "Pick a source folder in \"Set up USB/SSD backup\" first — cloud backup reuses that same source.",
+                    "Nothing to back up yet — turn on Photos/Videos on Home, or pick a source folder in \"Set up USB/SSD backup\" first.",
                     color = MaterialTheme.colorScheme.error,
                 )
             }

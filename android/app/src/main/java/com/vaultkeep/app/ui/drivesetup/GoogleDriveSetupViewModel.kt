@@ -8,13 +8,14 @@ import androidx.lifecycle.viewModelScope
 import com.vaultkeep.app.data.auth.DriveAuthManager
 import com.vaultkeep.app.data.crypto.DestinationEncryptor
 import com.vaultkeep.app.data.destination.GoogleDriveDestination
+import com.vaultkeep.app.data.local.BackupSetsPreferences
 import com.vaultkeep.app.data.local.BackupSetupPreferences
 import com.vaultkeep.app.data.remote.DriveApi
 import com.vaultkeep.app.di.DriveHttpClient
 import com.vaultkeep.app.domain.model.BackupSetKind
 import com.vaultkeep.app.domain.usecase.BackupProgressEvent
 import com.vaultkeep.app.domain.usecase.BackupRunSummary
-import com.vaultkeep.app.domain.usecase.RunUsbBackupUseCase
+import com.vaultkeep.app.domain.usecase.RunAllEnabledBackupsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,7 +42,8 @@ class GoogleDriveSetupViewModel @Inject constructor(
     private val driveApi: DriveApi,
     @DriveHttpClient private val driveHttpClient: OkHttpClient,
     private val backupSetupPreferences: BackupSetupPreferences,
-    private val runBackupUseCase: RunUsbBackupUseCase,
+    private val backupSetsPreferences: BackupSetsPreferences,
+    private val runAllEnabledBackupsUseCase: RunAllEnabledBackupsUseCase,
     private val destinationEncryptor: DestinationEncryptor,
 ) : ViewModel() {
 
@@ -95,7 +97,9 @@ class GoogleDriveSetupViewModel @Inject constructor(
         }
         viewModelScope.launch {
             val sourceUriString = backupSetupPreferences.sourceUri.first()
-            if (sourceUriString == null) {
+            val anySetEnabled = backupSetsPreferences.isEnabled(BackupSetKind.PHOTOS).first() ||
+                backupSetsPreferences.isEnabled(BackupSetKind.VIDEOS).first()
+            if (sourceUriString == null && !anySetEnabled) {
                 _uiState.value = _uiState.value.copy(noSourceConfigured = true)
                 return@launch
             }
@@ -104,10 +108,9 @@ class GoogleDriveSetupViewModel @Inject constructor(
             )
             val destination = destinationEncryptor.wrap(GoogleDriveDestination(driveApi, driveHttpClient, token))
             try {
-                val summary = runBackupUseCase.execute(
-                    sourceTreeUri = Uri.parse(sourceUriString),
+                val summary = runAllEnabledBackupsUseCase.execute(
+                    sourceTreeUri = sourceUriString?.let(Uri::parse),
                     destination = destination,
-                    setType = BackupSetKind.CUSTOM,
                     onProgress = { event -> _uiState.value = _uiState.value.copy(backupProgress = event) },
                 )
                 _uiState.value = _uiState.value.copy(backupRunning = false, backupSummary = summary)

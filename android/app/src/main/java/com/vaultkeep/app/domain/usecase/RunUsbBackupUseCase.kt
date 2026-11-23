@@ -4,17 +4,11 @@ import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import com.vaultkeep.app.data.crypto.EncryptingBackupDestination
-import com.vaultkeep.app.data.local.dao.BackupRecordDao
-import com.vaultkeep.app.data.local.dao.FileEntryDao
-import com.vaultkeep.app.data.local.entity.BackupRecordEntity
-import com.vaultkeep.app.data.local.entity.FileEntryEntity
 import com.vaultkeep.app.domain.BackupDestination
 import com.vaultkeep.app.domain.model.BackupSetKind
-import com.vaultkeep.app.domain.model.BackupStatus
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.security.MessageDigest
 import javax.inject.Inject
 
 data class BackupProgressEvent(
@@ -41,15 +35,13 @@ data class BackupRunSummary(
  * (via [IncrementalPolicy]) or copy to [destination], and keeps the Room
  * index (`file_entries` / `backup_records`) as the source of truth —
  * exactly the Phase 2 scope: SAF pick + incremental copy to USB/SSD.
- *
- * Deliberately synchronous/sequential for Phase 2; chunked resume and
- * WorkManager scheduling are added in Phase 3 without changing this
- * per-file decision logic.
+ * Per-file logic itself lives in [BackupFileWriter], shared with
+ * [RunMediaStoreBackupUseCase] (Photos/Videos), which walks MediaStore
+ * instead of a SAF tree.
  */
 class RunUsbBackupUseCase @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val fileEntryDao: FileEntryDao,
-    private val backupRecordDao: BackupRecordDao,
+    private val fileWriter: BackupFileWriter,
 ) {
     suspend fun execute(
         sourceTreeUri: Uri,
@@ -73,120 +65,35 @@ class RunUsbBackupUseCase @Inject constructor(
 
         for ((index, pair) in files.withIndex()) {
             val (doc, relativePath) = pair
-            val existingEntry = fileEntryDao.findByRelativePath(relativePath)
-            val existingRecord = existingEntry?.let {
-                backupRecordDao.find(it.id, destination.id)
-            }
 
-            val skip = IncrementalPolicy.shouldSkip(
-                known = existingEntry?.let {
-                    IncrementalPolicy.KnownFile(
-                        sizeBytes = it.sizeBytes,
-                        modifiedAt = it.modifiedAt,
-                        sha256 = it.sha256,
-                        recordStatusForDestination = existingRecord?.status,
-                    )
+            val outcome = fileWriter.process(
+                relativePath = relativePath,
+                sizeBytes = doc.length(),
+                modifiedAt = doc.lastModified(),
+                setType = setType,
+                sourceUri = doc.uri.toString(),
+                destination = destination,
+                encrypted = encrypted,
+                openInput = {
+                    context.contentResolver.openInputStream(doc.uri)
+                        ?: error("Could not open source file $relativePath")
                 },
-                candidate = IncrementalPolicy.CandidateFile(
-                    sizeBytes = doc.length(),
-                    modifiedAt = doc.lastModified(),
-                ),
             )
 
-            if (skip) {
-                skipped++
-                onProgress(
-                    BackupProgressEvent(
-                        currentFile = relativePath,
-                        filesDone = index + 1,
-                        totalFiles = files.size,
-                        bytesDone = bytesCopied,
-                        skipped = true,
-                    ),
-                )
-                continue
-            }
-
-            val sourceHash = hashOf(doc)
-            val result = destination.writeFile(relativePath, doc.length(), sourceHash) {
-                context.contentResolver.openInputStream(doc.uri)
-                    ?: error("Could not open source file $relativePath")
-            }
-
-            val now = System.currentTimeMillis()
-            val fileId = fileEntryDao.upsert(
-                FileEntryEntity(
-                    id = existingEntry?.id ?: 0,
-                    uri = doc.uri.toString(),
-                    relativePath = relativePath,
-                    sizeBytes = doc.length(),
-                    modifiedAt = doc.lastModified(),
-                    sha256 = sourceHash,
-                    setType = setType,
-                ),
-            )
-
-            when (result) {
-                is BackupDestination.WriteResult.Success -> {
-                    val verified = IncrementalPolicy.isVerified(
-                        sourceSha256 = sourceHash,
-                        sourceSize = doc.length(),
-                        writtenSha256 = result.writtenSha256,
-                        writtenSize = result.bytesWritten,
-                    )
-                    backupRecordDao.upsert(
-                        BackupRecordEntity(
-                            id = existingRecord?.id ?: 0,
-                            fileId = fileId,
-                            destinationId = destination.id,
-                            status = if (verified) BackupStatus.VERIFIED else BackupStatus.FAILED,
-                            remoteKey = relativePath,
-                            lastError = if (verified) null else "Hash mismatch after copy",
-                            updatedAt = now,
-                            encrypted = encrypted,
-                        ),
-                    )
-                    if (verified) {
-                        copied++
-                        bytesCopied += result.bytesWritten
-                    } else {
-                        failed++
-                        firstError = firstError ?: "Verification failed for '$relativePath'"
-                    }
-                    onProgress(
-                        BackupProgressEvent(
-                            currentFile = relativePath,
-                            filesDone = index + 1,
-                            totalFiles = files.size,
-                            bytesDone = bytesCopied,
-                            error = if (!verified) "Verification failed" else null,
-                        ),
-                    )
+            when (outcome) {
+                is BackupFileWriter.Outcome.Skipped -> {
+                    skipped++
+                    onProgress(BackupProgressEvent(relativePath, index + 1, files.size, bytesCopied, skipped = true))
                 }
-                is BackupDestination.WriteResult.Failure -> {
+                is BackupFileWriter.Outcome.Copied -> {
+                    copied++
+                    bytesCopied += outcome.bytesWritten
+                    onProgress(BackupProgressEvent(relativePath, index + 1, files.size, bytesCopied))
+                }
+                is BackupFileWriter.Outcome.Failed -> {
                     failed++
-                    firstError = firstError ?: result.message
-                    backupRecordDao.upsert(
-                        BackupRecordEntity(
-                            id = existingRecord?.id ?: 0,
-                            fileId = fileId,
-                            destinationId = destination.id,
-                            status = BackupStatus.FAILED,
-                            remoteKey = null,
-                            lastError = result.message,
-                            updatedAt = now,
-                            encrypted = encrypted,
-                        ),
-                    )
-                    onProgress(
-                        BackupProgressEvent(
-                            currentFile = relativePath,
-                            filesDone = index + 1,
-                            totalFiles = files.size,
-                            bytesDone = bytesCopied,
-                            error = result.message,
-                        ),
-                    )
+                    firstError = firstError ?: outcome.message
+                    onProgress(BackupProgressEvent(relativePath, index + 1, files.size, bytesCopied, error = outcome.message))
                 }
             }
         }
@@ -203,18 +110,5 @@ class RunUsbBackupUseCase @Inject constructor(
                 out.add(child to childPath)
             }
         }
-    }
-
-    private fun hashOf(doc: DocumentFile): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        context.contentResolver.openInputStream(doc.uri)?.use { input ->
-            val buffer = ByteArray(8 * 1024)
-            while (true) {
-                val read = input.read(buffer)
-                if (read == -1) break
-                digest.update(buffer, 0, read)
-            }
-        }
-        return digest.digest().joinToString("") { "%02x".format(it) }
     }
 }
