@@ -62,6 +62,7 @@ fun HomeScreen(
     onOpenRestore: () -> Unit = {},
     onOpenStorageInsights: () -> Unit = {},
     onOpenGoogleDriveSetup: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -172,6 +173,10 @@ fun HomeScreen(
 
             item {
                 VoidSecondaryButton(text = "Storage insights", onClick = onOpenStorageInsights, modifier = Modifier.fillMaxWidth())
+            }
+
+            item {
+                VoidSecondaryButton(text = "Settings", onClick = onOpenSettings, modifier = Modifier.fillMaxWidth())
             }
 
             item {

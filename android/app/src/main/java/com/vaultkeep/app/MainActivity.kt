@@ -4,10 +4,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vaultkeep.app.data.local.AppearancePreferences
+import com.vaultkeep.app.data.local.ThemeMode
 import com.vaultkeep.app.ui.navigation.VaultNavGraph
 import com.vaultkeep.app.ui.theme.VaultKeepTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Single activity. Normal, visible launcher entry — the owner opens Void
@@ -15,12 +21,22 @@ import dagger.hilt.android.AndroidEntryPoint
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var appearancePreferences: AppearancePreferences
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            VaultKeepTheme {
+            val themeMode by appearancePreferences.themeMode.collectAsStateWithLifecycle(initialValue = ThemeMode.DARK)
+            val darkTheme = when (themeMode) {
+                ThemeMode.DARK -> true
+                ThemeMode.LIGHT -> false
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
+            VaultKeepTheme(darkTheme = darkTheme) {
                 VaultNavGraph()
             }
         }

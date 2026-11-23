@@ -13,6 +13,7 @@ import com.vaultkeep.app.ui.cloudauth.CloudAuthScreen
 import com.vaultkeep.app.ui.drivesetup.GoogleDriveSetupScreen
 import com.vaultkeep.app.ui.home.HomeScreen
 import com.vaultkeep.app.ui.insights.StorageInsightsScreen
+import com.vaultkeep.app.ui.settings.SettingsScreen
 import com.vaultkeep.app.ui.nassetup.NasSetupScreen
 import com.vaultkeep.app.ui.passphrase.PassphraseScreen
 import com.vaultkeep.app.ui.restore.RestoreScreen
@@ -52,6 +53,7 @@ fun VaultNavGraph(
                 onOpenRestore = { navController.navigate(VaultDestination.Restore.route) },
                 onOpenStorageInsights = { navController.navigate(VaultDestination.StorageInsights.route) },
                 onOpenGoogleDriveSetup = { navController.navigate(VaultDestination.GoogleDriveSetup.route) },
+                onOpenSettings = { navController.navigate(VaultDestination.Settings.route) },
             )
         }
         composable(VaultDestination.BackupSetup.route) {
@@ -80,6 +82,9 @@ fun VaultNavGraph(
         }
         composable(VaultDestination.GoogleDriveSetup.route) {
             GoogleDriveSetupScreen()
+        }
+        composable(VaultDestination.Settings.route) {
+            SettingsScreen()
         }
     }
 }

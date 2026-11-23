@@ -1,5 +1,6 @@
 package com.vaultkeep.app.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -74,17 +75,15 @@ object VaultTheme {
  * components) and layers VaultKeep's own spacing/radii/motion tokens on top
  * via CompositionLocals, exposed through [VaultTheme].
  *
- * Always dark by default, regardless of the system setting: Void's whole
- * identity (the eclipse splash, the ink/signal-purple palette) is designed
- * dark-first, and falls back to a generic, washed-out Material palette in
- * light mode that undercuts it — not what a system-light phone should see.
- * [VaultLightColorScheme] is kept (and still reachable by passing
- * `darkTheme = false` explicitly, e.g. for a future in-app setting) rather
- * than deleted outright.
+ * The real app (MainActivity) always passes [darkTheme] explicitly, resolved
+ * from the user's [AppearancePreferences] choice (Dark/Light/System — Dark
+ * by default, since Void's identity is designed dark-first, but it's a
+ * user-changeable setting, never hardcoded). The [isSystemInDarkTheme] default
+ * here only matters for `@Preview`s and other callers that don't care.
  */
 @Composable
 fun VaultKeepTheme(
-    darkTheme: Boolean = true,
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
     val colorScheme = if (darkTheme) VaultDarkColorScheme else VaultLightColorScheme
