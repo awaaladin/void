@@ -34,7 +34,7 @@ import com.vaultkeep.app.ui.theme.VaultTheme
  * other destination.
  */
 @Composable
-fun GoogleDriveSetupScreen(viewModel: GoogleDriveSetupViewModel = hiltViewModel()) {
+fun GoogleDriveSetupScreen(viewModel: GoogleDriveSetupViewModel = hiltViewModel(), onBack: () -> Unit = {}) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val consentLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
@@ -65,6 +65,7 @@ fun GoogleDriveSetupScreen(viewModel: GoogleDriveSetupViewModel = hiltViewModel(
                     tint = VaultColorTokens.Signal500,
                     title = "Google Drive",
                     subtitle = "Backs up into a \"Void Backups\" folder in your own Drive. Void only ever sees files and folders it creates there — nothing else in your Drive.",
+                    onBack = onBack,
                 )
             }
 

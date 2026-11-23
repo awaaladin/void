@@ -38,6 +38,7 @@ import com.vaultkeep.app.ui.theme.VaultTheme
 fun NasSetupScreen(
     viewModel: NasSetupViewModel = hiltViewModel(),
     onSaved: () -> Unit = {},
+    onBack: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -59,6 +60,7 @@ fun NasSetupScreen(
                         tint = VaultColorTokens.Signal500,
                         title = "Home NAS",
                         subtitle = "Your NAS needs to already be set up and reachable on this Wi-Fi network — Void connects to it, it doesn't create one. Not sure which protocol? Most Synology/QNAP/Nextcloud boxes support WebDAV; plain Windows file sharing uses SMB. Check your NAS's own settings if unsure.",
+                        onBack = onBack,
                     )
                 }
             }

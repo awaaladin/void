@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -17,7 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import com.vaultkeep.app.ui.components.ScreenHeader
 import com.vaultkeep.app.ui.components.VoidButton
+import com.vaultkeep.app.ui.theme.VaultColorTokens
 import com.vaultkeep.app.ui.theme.VaultTheme
 
 /**
@@ -29,7 +33,7 @@ import com.vaultkeep.app.ui.theme.VaultTheme
  * for those — this is the honest limit of what Android lets an app do).
  */
 @Composable
-fun BatteryGuideScreen() {
+fun BatteryGuideScreen(onBack: () -> Unit = {}) {
     val context = LocalContext.current
     val manufacturer = Build.MANUFACTURER?.lowercase().orEmpty()
 
@@ -41,15 +45,12 @@ fun BatteryGuideScreen() {
                 .padding(VaultTheme.spacing.lg),
             verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
         ) {
-            Text(
-                "Keep backups reliable",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                "Some phones aggressively kill background apps to save battery, which can stop a backup mid-transfer. Two steps fix that.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            ScreenHeader(
+                icon = Icons.Outlined.BatteryChargingFull,
+                tint = VaultColorTokens.Signal500,
+                title = "Keep backups reliable",
+                subtitle = "Some phones aggressively kill background apps to save battery, which can stop a backup mid-transfer. Two steps fix that.",
+                onBack = onBack,
             )
 
             StepCard(

@@ -57,34 +57,40 @@ fun VaultNavGraph(
             )
         }
         composable(VaultDestination.BackupSetup.route) {
-            BackupSetupScreen(onOpenScheduling = { navController.navigate(VaultDestination.Scheduling.route) })
+            BackupSetupScreen(
+                onOpenScheduling = { navController.navigate(VaultDestination.Scheduling.route) },
+                onBack = { navController.popBackStack() },
+            )
         }
         composable(VaultDestination.Scheduling.route) {
-            SchedulingScreen(onOpenBatteryGuide = { navController.navigate(VaultDestination.BatteryGuide.route) })
+            SchedulingScreen(
+                onOpenBatteryGuide = { navController.navigate(VaultDestination.BatteryGuide.route) },
+                onBack = { navController.popBackStack() },
+            )
         }
         composable(VaultDestination.BatteryGuide.route) {
-            BatteryGuideScreen()
+            BatteryGuideScreen(onBack = { navController.popBackStack() })
         }
         composable(VaultDestination.NasSetup.route) {
-            NasSetupScreen(onSaved = { navController.popBackStack() })
+            NasSetupScreen(onSaved = { navController.popBackStack() }, onBack = { navController.popBackStack() })
         }
         composable(VaultDestination.CloudAuth.route) {
-            CloudAuthScreen()
+            CloudAuthScreen(onBack = { navController.popBackStack() })
         }
         composable(VaultDestination.Passphrase.route) {
-            PassphraseScreen()
+            PassphraseScreen(onBack = { navController.popBackStack() })
         }
         composable(VaultDestination.Restore.route) {
-            RestoreScreen()
+            RestoreScreen(onBack = { navController.popBackStack() })
         }
         composable(VaultDestination.StorageInsights.route) {
-            StorageInsightsScreen()
+            StorageInsightsScreen(onBack = { navController.popBackStack() })
         }
         composable(VaultDestination.GoogleDriveSetup.route) {
-            GoogleDriveSetupScreen()
+            GoogleDriveSetupScreen(onBack = { navController.popBackStack() })
         }
         composable(VaultDestination.Settings.route) {
-            SettingsScreen()
+            SettingsScreen(onBack = { navController.popBackStack() })
         }
     }
 }

@@ -26,7 +26,7 @@ import com.vaultkeep.app.ui.theme.VaultColorTokens
 import com.vaultkeep.app.ui.theme.VaultTheme
 
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel(), onBack: () -> Unit = {}) {
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
@@ -38,7 +38,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
         ) {
             StaggeredEntrance(index = 0) {
-                ScreenHeader(icon = Icons.Outlined.DarkMode, tint = VaultColorTokens.Signal500, title = "Settings")
+                ScreenHeader(icon = Icons.Outlined.DarkMode, tint = VaultColorTokens.Signal500, title = "Settings", onBack = onBack)
             }
 
             StaggeredEntrance(index = 1) {

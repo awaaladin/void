@@ -35,7 +35,7 @@ import java.util.Locale
 
 /** Phase 7: what's actually backed up, where, and how much of it — plus a plain-text report export. */
 @Composable
-fun StorageInsightsScreen(viewModel: StorageInsightsViewModel = hiltViewModel()) {
+fun StorageInsightsScreen(viewModel: StorageInsightsViewModel = hiltViewModel(), onBack: () -> Unit = {}) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val dateFormat = remember { SimpleDateFormat("MMM d, yyyy 'at' h:mm a", Locale.getDefault()) }
 
@@ -52,7 +52,7 @@ fun StorageInsightsScreen(viewModel: StorageInsightsViewModel = hiltViewModel())
             verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
         ) {
             StaggeredEntrance(index = 0) {
-                ScreenHeader(icon = Icons.Outlined.BarChart, tint = VaultColorTokens.Signal500, title = "Storage insights")
+                ScreenHeader(icon = Icons.Outlined.BarChart, tint = VaultColorTokens.Signal500, title = "Storage insights", onBack = onBack)
             }
 
             StaggeredEntrance(index = 1) {

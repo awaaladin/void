@@ -32,20 +32,20 @@ import com.vaultkeep.app.ui.theme.VaultTheme
  * the public-account system.
  */
 @Composable
-fun CloudAuthScreen(viewModel: CloudAuthViewModel = hiltViewModel()) {
+fun CloudAuthScreen(viewModel: CloudAuthViewModel = hiltViewModel(), onBack: () -> Unit = {}) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
         if (uiState.signedIn) {
-            SignedInContent(uiState, viewModel, padding)
+            SignedInContent(uiState, viewModel, padding, onBack)
         } else {
-            SignedOutContent(uiState, viewModel, padding)
+            SignedOutContent(uiState, viewModel, padding, onBack)
         }
     }
 }
 
 @Composable
-private fun SignedOutContent(uiState: CloudAuthUiState, viewModel: CloudAuthViewModel, padding: androidx.compose.foundation.layout.PaddingValues) {
+private fun SignedOutContent(uiState: CloudAuthUiState, viewModel: CloudAuthViewModel, padding: androidx.compose.foundation.layout.PaddingValues, onBack: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -58,6 +58,7 @@ private fun SignedOutContent(uiState: CloudAuthUiState, viewModel: CloudAuthView
             tint = VaultColorTokens.Signal500,
             title = "Void Cloud",
             subtitle = "Our own backend, backed by S3-compatible object storage — no practical cap on how much you can keep here. Sign in or create an account to use it as a backup destination.",
+            onBack = onBack,
         )
 
         OutlinedTextField(
@@ -89,7 +90,7 @@ private fun SignedOutContent(uiState: CloudAuthUiState, viewModel: CloudAuthView
 }
 
 @Composable
-private fun SignedInContent(uiState: CloudAuthUiState, viewModel: CloudAuthViewModel, padding: androidx.compose.foundation.layout.PaddingValues) {
+private fun SignedInContent(uiState: CloudAuthUiState, viewModel: CloudAuthViewModel, padding: androidx.compose.foundation.layout.PaddingValues, onBack: () -> Unit) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -99,7 +100,7 @@ private fun SignedInContent(uiState: CloudAuthUiState, viewModel: CloudAuthViewM
     ) {
         item {
             StaggeredEntrance(index = 0) {
-                ScreenHeader(icon = Icons.Outlined.Cloud, tint = VaultColorTokens.Signal500, title = "Void Cloud")
+                ScreenHeader(icon = Icons.Outlined.Cloud, tint = VaultColorTokens.Signal500, title = "Void Cloud", onBack = onBack)
             }
         }
 

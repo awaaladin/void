@@ -52,7 +52,7 @@ private fun formatBytes(bytes: Long): String {
  * the restore — the mirror of Phase 2-5's backup setup screens.
  */
 @Composable
-fun RestoreScreen(viewModel: RestoreViewModel = hiltViewModel()) {
+fun RestoreScreen(viewModel: RestoreViewModel = hiltViewModel(), onBack: () -> Unit = {}) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -75,7 +75,7 @@ fun RestoreScreen(viewModel: RestoreViewModel = hiltViewModel()) {
             verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
         ) {
             StaggeredEntrance(index = 0) {
-                ScreenHeader(icon = Icons.Outlined.History, tint = VaultColorTokens.Signal500, title = "Restore")
+                ScreenHeader(icon = Icons.Outlined.History, tint = VaultColorTokens.Signal500, title = "Restore", onBack = onBack)
             }
 
             if (uiState.destinations.isEmpty()) {

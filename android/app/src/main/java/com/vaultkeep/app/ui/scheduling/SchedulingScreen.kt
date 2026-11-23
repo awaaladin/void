@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -20,14 +22,17 @@ import androidx.compose.ui.draw.clip
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vaultkeep.app.data.local.ScheduleMode
+import com.vaultkeep.app.ui.components.ScreenHeader
 import com.vaultkeep.app.ui.components.VoidButton
 import com.vaultkeep.app.ui.components.VoidSecondaryButton
+import com.vaultkeep.app.ui.theme.VaultColorTokens
 import com.vaultkeep.app.ui.theme.VaultTheme
 
 @Composable
 fun SchedulingScreen(
     viewModel: SchedulingViewModel = hiltViewModel(),
     onOpenBatteryGuide: () -> Unit = {},
+    onBack: () -> Unit = {},
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
 
@@ -39,11 +44,12 @@ fun SchedulingScreen(
                 .padding(VaultTheme.spacing.lg),
             verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
         ) {
-            Text("Scheduling", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
-            Text(
-                "Applies to the USB/SSD backup you set up. These are real WorkManager jobs — changing a mode here enqueues or cancels an actual scheduled task.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            ScreenHeader(
+                icon = Icons.Outlined.Schedule,
+                tint = VaultColorTokens.Signal500,
+                title = "Scheduling",
+                subtitle = "Applies to the USB/SSD backup you set up. These are real WorkManager jobs — changing a mode here enqueues or cancels an actual scheduled task.",
+                onBack = onBack,
             )
 
             Column(

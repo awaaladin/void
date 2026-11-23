@@ -31,7 +31,7 @@ import com.vaultkeep.app.ui.theme.VaultColorTokens
 import com.vaultkeep.app.ui.theme.VaultTheme
 
 @Composable
-fun PassphraseScreen(viewModel: PassphraseViewModel = hiltViewModel()) {
+fun PassphraseScreen(viewModel: PassphraseViewModel = hiltViewModel(), onBack: () -> Unit = {}) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
@@ -43,7 +43,7 @@ fun PassphraseScreen(viewModel: PassphraseViewModel = hiltViewModel()) {
             verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
         ) {
             StaggeredEntrance(index = 0) {
-                ScreenHeader(icon = Icons.Outlined.Lock, tint = VaultColorTokens.Signal500, title = "Encryption")
+                ScreenHeader(icon = Icons.Outlined.Lock, tint = VaultColorTokens.Signal500, title = "Encryption", onBack = onBack)
             }
 
             EncryptionToggleRow(enabled = uiState.encryptionEnabled, onToggle = viewModel::setEncryptionEnabled)

@@ -47,6 +47,7 @@ import com.vaultkeep.app.ui.theme.VaultTheme
 fun BackupSetupScreen(
     viewModel: BackupSetupViewModel = hiltViewModel(),
     onOpenScheduling: () -> Unit = {},
+    onBack: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -86,6 +87,7 @@ fun BackupSetupScreen(
                         tint = VaultColorTokens.Signal500,
                         title = "Back up to USB/SSD",
                         subtitle = "Two taps: pick what to back up, then pick where to put it. Each \"Choose folder\" button opens Android's own folder picker — a full-screen system screen, not part of Void — so don't worry if it looks different from the rest of the app.",
+                        onBack = onBack,
                     )
                 }
             }
