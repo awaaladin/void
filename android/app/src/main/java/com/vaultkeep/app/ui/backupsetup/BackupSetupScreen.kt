@@ -34,6 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vaultkeep.app.ui.components.ScreenHeader
 import com.vaultkeep.app.ui.components.StaggeredEntrance
 import com.vaultkeep.app.ui.components.VoidButton
+import com.vaultkeep.app.ui.components.VoidErrorDialog
 import com.vaultkeep.app.ui.components.VoidSecondaryButton
 import com.vaultkeep.app.ui.theme.VaultColorTokens
 import com.vaultkeep.app.ui.theme.VaultTheme
@@ -156,13 +157,9 @@ fun BackupSetupScreen(
                     )
                 }
             }
-
-            uiState.errorMessage?.let { message ->
-                item {
-                    Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
-                }
-            }
         }
+
+        VoidErrorDialog(uiState.errorMessage ?: uiState.summary?.takeIf { it.filesFailed > 0 }?.firstError)
     }
 }
 

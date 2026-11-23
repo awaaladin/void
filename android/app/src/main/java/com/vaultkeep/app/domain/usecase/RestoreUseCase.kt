@@ -22,6 +22,7 @@ data class RestoreRunSummary(
     val filesRestored: Int,
     val filesFailed: Int,
     val bytesRestored: Long,
+    val firstError: String? = null,
 )
 
 /**
@@ -47,6 +48,7 @@ class RestoreUseCase @Inject constructor(
         var restored = 0
         var failed = 0
         var bytesRestored = 0L
+        var firstError: String? = null
 
         for ((index, file) in files.withIndex()) {
             try {
@@ -87,6 +89,7 @@ class RestoreUseCase @Inject constructor(
                     bytesRestored += bytesWritten
                 } else {
                     failed++
+                    firstError = firstError ?: "Hash mismatch after restoring '${file.relativePath}'"
                     target.delete() // a corrupt restore is worse than a missing one
                 }
                 onProgress(
@@ -99,6 +102,7 @@ class RestoreUseCase @Inject constructor(
                 )
             } catch (e: Exception) {
                 failed++
+                firstError = firstError ?: (e.message ?: "Restore failed for '${file.relativePath}'")
                 onProgress(
                     RestoreProgressEvent(
                         currentFile = file.relativePath,
@@ -110,7 +114,7 @@ class RestoreUseCase @Inject constructor(
             }
         }
 
-        RestoreRunSummary(filesRestored = restored, filesFailed = failed, bytesRestored = bytesRestored)
+        RestoreRunSummary(filesRestored = restored, filesFailed = failed, bytesRestored = bytesRestored, firstError = firstError)
     }
 
     private fun mimeTypeFor(fileName: String): String {

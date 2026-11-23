@@ -22,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vaultkeep.app.ui.components.ScreenHeader
 import com.vaultkeep.app.ui.components.StaggeredEntrance
 import com.vaultkeep.app.ui.components.VoidButton
+import com.vaultkeep.app.ui.components.VoidErrorDialog
 import com.vaultkeep.app.ui.components.VoidSecondaryButton
 import com.vaultkeep.app.ui.theme.VaultColorTokens
 import com.vaultkeep.app.ui.theme.VaultTheme
@@ -57,7 +58,7 @@ private fun SignedOutContent(uiState: CloudAuthUiState, viewModel: CloudAuthView
             icon = Icons.Outlined.Cloud,
             tint = VaultColorTokens.Signal500,
             title = "Void Cloud",
-            subtitle = "Our own backend, backed by S3-compatible object storage — no practical cap on how much you can keep here. Sign in or create an account to use it as a backup destination.",
+            subtitle = "Our own backend, backed by cloud object storage — no practical cap on how much you can keep here. Sign in or create an account to use it as a backup destination.",
             onBack = onBack,
         )
 
@@ -83,10 +84,8 @@ private fun SignedOutContent(uiState: CloudAuthUiState, viewModel: CloudAuthView
         VoidButton(text = "Sign in", onClick = viewModel::login, loading = uiState.isSubmitting, modifier = Modifier.fillMaxWidth())
         VoidSecondaryButton(text = "Create account", onClick = viewModel::register, enabled = !uiState.isSubmitting, modifier = Modifier.fillMaxWidth())
 
-        uiState.errorMessage?.let { message ->
-            Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
-        }
     }
+    VoidErrorDialog(uiState.errorMessage)
 }
 
 @Composable
@@ -181,14 +180,11 @@ private fun SignedInContent(uiState: CloudAuthUiState, viewModel: CloudAuthViewM
             }
         }
 
-        uiState.backupError?.let { message ->
-            item { Text(message, color = MaterialTheme.colorScheme.error) }
-        }
-
         item {
             VoidSecondaryButton(text = "Sign out", onClick = viewModel::signOut, modifier = Modifier.fillMaxWidth())
         }
     }
+    VoidErrorDialog(uiState.backupError ?: uiState.backupSummary?.takeIf { it.filesFailed > 0 }?.firstError)
 }
 
 private fun formatBytes(bytes: Long): String {

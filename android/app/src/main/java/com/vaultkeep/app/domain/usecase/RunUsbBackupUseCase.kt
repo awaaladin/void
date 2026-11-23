@@ -31,6 +31,9 @@ data class BackupRunSummary(
     val filesSkipped: Int,
     val filesFailed: Int,
     val bytesCopied: Long,
+    /** The first failure's actual reason — e.g. "Encryption is on but locked..." — so a
+     * failed run can tell the user something more useful than a bare file count. */
+    val firstError: String? = null,
 )
 
 /**
@@ -66,6 +69,7 @@ class RunUsbBackupUseCase @Inject constructor(
         var skipped = 0
         var failed = 0
         var bytesCopied = 0L
+        var firstError: String? = null
 
         for ((index, pair) in files.withIndex()) {
             val (doc, relativePath) = pair
@@ -147,6 +151,7 @@ class RunUsbBackupUseCase @Inject constructor(
                         bytesCopied += result.bytesWritten
                     } else {
                         failed++
+                        firstError = firstError ?: "Verification failed for '$relativePath'"
                     }
                     onProgress(
                         BackupProgressEvent(
@@ -160,6 +165,7 @@ class RunUsbBackupUseCase @Inject constructor(
                 }
                 is BackupDestination.WriteResult.Failure -> {
                     failed++
+                    firstError = firstError ?: result.message
                     backupRecordDao.upsert(
                         BackupRecordEntity(
                             id = existingRecord?.id ?: 0,
@@ -185,7 +191,7 @@ class RunUsbBackupUseCase @Inject constructor(
             }
         }
 
-        BackupRunSummary(filesCopied = copied, filesSkipped = skipped, filesFailed = failed, bytesCopied = bytesCopied)
+        BackupRunSummary(filesCopied = copied, filesSkipped = skipped, filesFailed = failed, bytesCopied = bytesCopied, firstError = firstError)
     }
 
     private fun collectFiles(dir: DocumentFile, relativePathPrefix: String, out: MutableList<Pair<DocumentFile, String>>) {

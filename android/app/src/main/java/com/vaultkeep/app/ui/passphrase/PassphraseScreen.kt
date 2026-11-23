@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vaultkeep.app.ui.components.ScreenHeader
 import com.vaultkeep.app.ui.components.StaggeredEntrance
 import com.vaultkeep.app.ui.components.VoidButton
+import com.vaultkeep.app.ui.components.VoidErrorDialog
 import com.vaultkeep.app.ui.components.VoidSecondaryButton
 import com.vaultkeep.app.ui.theme.VaultColorTokens
 import com.vaultkeep.app.ui.theme.VaultTheme
@@ -54,6 +55,7 @@ fun PassphraseScreen(viewModel: PassphraseViewModel = hiltViewModel(), onBack: (
                 else -> UnlockedSection(uiState, viewModel)
             }
         }
+        VoidErrorDialog(uiState.errorMessage)
     }
 }
 
@@ -122,7 +124,6 @@ private fun SetupPassphraseSection(uiState: PassphraseUiState, viewModel: Passph
         modifier = Modifier.fillMaxWidth(),
     )
 
-    uiState.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 }
 
 @Composable
@@ -140,7 +141,6 @@ private fun UnlockSection(uiState: PassphraseUiState, viewModel: PassphraseViewM
         modifier = Modifier.fillMaxWidth(),
     )
     VoidButton(text = "Unlock", onClick = viewModel::unlock, modifier = Modifier.fillMaxWidth())
-    uiState.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
     ForgetPassphraseSection(uiState, viewModel)
 }
@@ -176,7 +176,6 @@ private fun UnlockedSection(uiState: PassphraseUiState, viewModel: PassphraseVie
         enabled = uiState.canSubmitSetup,
         modifier = Modifier.fillMaxWidth(),
     )
-    uiState.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
     ForgetPassphraseSection(uiState, viewModel)
 }

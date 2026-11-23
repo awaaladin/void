@@ -31,6 +31,7 @@ import com.vaultkeep.app.domain.model.NasProtocol
 import com.vaultkeep.app.ui.components.ScreenHeader
 import com.vaultkeep.app.ui.components.StaggeredEntrance
 import com.vaultkeep.app.ui.components.VoidButton
+import com.vaultkeep.app.ui.components.VoidErrorDialog
 import com.vaultkeep.app.ui.theme.VaultColorTokens
 import com.vaultkeep.app.ui.theme.VaultTheme
 
@@ -221,13 +222,9 @@ fun NasSetupScreen(
                     )
                 }
             }
-
-            uiState.backupError?.let { message ->
-                item {
-                    Text(message, color = MaterialTheme.colorScheme.error)
-                }
-            }
         }
+
+        VoidErrorDialog(uiState.backupError ?: uiState.backupSummary?.takeIf { it.filesFailed > 0 }?.firstError)
     }
 }
 
