@@ -2,6 +2,8 @@ package com.vaultkeep.app.worker
 
 import android.content.Context
 import android.content.pm.ServiceInfo
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import androidx.hilt.work.HiltWorker
@@ -61,9 +63,13 @@ class BackupWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         BackupNotifications.ensureChannel(applicationContext)
-        setForeground(foregroundInfo(0))
 
         val kind = inputData.getString(KEY_DESTINATION_KIND) ?: DESTINATION_USB
+        // Cloud/Drive genuinely use the network; USB/NAS don't count as "mobile data" the same
+        // way, so only warn when it's actually relevant instead of always checking.
+        val usesMobileData = (kind == DESTINATION_CLOUD || kind == DESTINATION_DRIVE) && isOnMeteredConnection()
+        setForeground(foregroundInfo(0, usesMobileData = usesMobileData))
+
         val destination = buildDestination(kind) ?: return Result.success()
 
         val sourceUriString = preferences.sourceUri.first()
@@ -77,7 +83,7 @@ class BackupWorker @AssistedInject constructor(
                 destination = destination,
                 onProgress = { event ->
                     val percent = if (event.totalFiles > 0) (event.filesDone * 100 / event.totalFiles) else 0
-                    setForeground(foregroundInfo(percent, event.currentFile))
+                    setForeground(foregroundInfo(percent, event.currentFile, usesMobileData))
                     setProgress(
                         Data.Builder()
                             .putInt(KEY_FILES_DONE, event.filesDone)
@@ -134,10 +140,16 @@ class BackupWorker @AssistedInject constructor(
         }
     }
 
-    private fun foregroundInfo(percent: Int, currentFile: String? = null): ForegroundInfo {
+    private fun isOnMeteredConnection(): Boolean {
+        val cm = applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
+        return !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+    }
+
+    private fun foregroundInfo(percent: Int, currentFile: String? = null, usesMobileData: Boolean = false): ForegroundInfo {
         val notification = BackupNotifications.progressNotification(
             context = applicationContext,
-            title = "Void is backing up",
+            title = if (usesMobileData) "Void is backing up — using mobile data" else "Void is backing up",
             text = currentFile ?: "Starting…",
             progressPercent = percent,
         )

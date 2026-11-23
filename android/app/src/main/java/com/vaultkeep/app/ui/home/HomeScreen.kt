@@ -1,6 +1,7 @@
 package com.vaultkeep.app.ui.home
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -91,6 +92,25 @@ fun HomeScreen(
             com.vaultkeep.app.domain.model.BackupSetKind.VIDEOS -> mediaPermissionFor(BackupSetType.VIDEOS)?.let(videoPermissionLauncher::launch)
             else -> {}
         }
+    }
+
+    var pendingFolderPickKind by remember { mutableStateOf<com.vaultkeep.app.domain.model.BackupSetKind?>(null) }
+    val folderPickLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        val kind = pendingFolderPickKind
+        pendingFolderPickKind = null
+        if (uri != null && kind != null) {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+            viewModel.onCustomFolderPicked(kind, uri)
+        }
+    }
+    LaunchedEffect(uiState.folderPickRequest) {
+        val kind = uiState.folderPickRequest ?: return@LaunchedEffect
+        pendingFolderPickKind = kind
+        folderPickLauncher.launch(null)
+        viewModel.onFolderPickRequestConsumed()
     }
 
     var showReloadSplash by remember { mutableStateOf(false) }

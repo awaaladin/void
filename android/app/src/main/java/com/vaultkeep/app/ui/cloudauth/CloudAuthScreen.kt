@@ -179,10 +179,6 @@ private fun SignedInContent(uiState: CloudAuthUiState, viewModel: CloudAuthViewM
                 )
             }
         }
-
-        item {
-            VoidSecondaryButton(text = "Sign out", onClick = viewModel::signOut, modifier = Modifier.fillMaxWidth())
-        }
     }
     VoidErrorDialog(uiState.backupError ?: uiState.backupSummary?.takeIf { it.filesFailed > 0 }?.firstError)
 }

@@ -2,6 +2,7 @@ package com.vaultkeep.app.domain.usecase
 
 import android.net.Uri
 import com.vaultkeep.app.data.local.BackupSetsPreferences
+import com.vaultkeep.app.data.local.CustomSourcePreferences
 import com.vaultkeep.app.domain.BackupDestination
 import com.vaultkeep.app.domain.model.BackupSetKind
 import kotlinx.coroutines.flow.first
@@ -9,15 +10,18 @@ import javax.inject.Inject
 
 /**
  * What every "Back up now" / "Start backup" button actually runs: the
- * manually-picked SAF folder (if one is set) plus whichever MediaStore
- * sets (Photos/Videos) are enabled on Home — all to the one [destination]
- * passed in. Before this existed, enabling "Photos" on Home only saved a
- * preference that nothing ever read; this is what makes that toggle real.
+ * manually-picked SAF folder (if one is set), whichever MediaStore sets
+ * (Photos/Videos) are enabled on Home, and whichever folder-based sets
+ * (Documents/Downloads/WhatsApp media) have both a folder picked and are
+ * enabled — all to the one [destination] passed in. Before this existed,
+ * enabling "Photos" on Home only saved a preference that nothing ever read;
+ * this is what makes that toggle real.
  */
 class RunAllEnabledBackupsUseCase @Inject constructor(
     private val runUsbBackupUseCase: RunUsbBackupUseCase,
     private val runMediaStoreBackupUseCase: RunMediaStoreBackupUseCase,
     private val backupSetsPreferences: BackupSetsPreferences,
+    private val customSourcePreferences: CustomSourcePreferences,
 ) {
     suspend fun execute(
         sourceTreeUri: Uri?,
@@ -36,6 +40,12 @@ class RunAllEnabledBackupsUseCase @Inject constructor(
             if (backupSetsPreferences.isEnabled(kind).first()) {
                 total = total.merge(runMediaStoreBackupUseCase.execute(kind, destination, onProgress))
             }
+        }
+
+        for (kind in listOf(BackupSetKind.DOCUMENTS, BackupSetKind.DOWNLOADS, BackupSetKind.WHATSAPP)) {
+            if (!backupSetsPreferences.isEnabled(kind).first()) continue
+            val uri = customSourcePreferences.sourceUri(kind).first()?.let(Uri::parse) ?: continue
+            total = total.merge(runUsbBackupUseCase.execute(uri, destination, kind, onProgress))
         }
 
         return total

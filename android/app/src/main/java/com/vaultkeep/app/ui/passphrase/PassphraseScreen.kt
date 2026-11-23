@@ -44,7 +44,13 @@ fun PassphraseScreen(viewModel: PassphraseViewModel = hiltViewModel(), onBack: (
             verticalArrangement = Arrangement.spacedBy(VaultTheme.spacing.lg),
         ) {
             StaggeredEntrance(index = 0) {
-                ScreenHeader(icon = Icons.Outlined.Lock, tint = VaultColorTokens.Signal500, title = "Encryption", onBack = onBack)
+                ScreenHeader(
+                    icon = Icons.Outlined.Lock,
+                    tint = VaultColorTokens.Signal500,
+                    title = "Encryption",
+                    subtitle = "Scrambles your files with a key made from your passphrase before they leave your phone, so only you can ever read them back — not Void, not whoever stores them. The passphrase is that key: without it, no one can unlock your backups, including you.",
+                    onBack = onBack,
+                )
             }
 
             EncryptionToggleRow(enabled = uiState.encryptionEnabled, onToggle = viewModel::setEncryptionEnabled)
