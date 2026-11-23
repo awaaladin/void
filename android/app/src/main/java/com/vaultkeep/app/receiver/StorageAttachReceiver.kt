@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
+import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.vaultkeep.app.worker.BackupWorker
@@ -27,9 +28,11 @@ class StorageAttachReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_MEDIA_MOUNTED) return
 
-        val request = OneTimeWorkRequestBuilder<BackupWorker>().build()
+        val request = OneTimeWorkRequestBuilder<BackupWorker>()
+            .setInputData(Data.Builder().putString(BackupWorker.KEY_DESTINATION_KIND, BackupWorker.DESTINATION_USB).build())
+            .build()
         WorkManager.getInstance(context).enqueueUniqueWork(
-            BackupWorker.UNIQUE_ONE_TIME_NAME,
+            BackupWorker.UNIQUE_ONE_TIME_PREFIX + BackupWorker.DESTINATION_USB,
             androidx.work.ExistingWorkPolicy.KEEP,
             request,
         )

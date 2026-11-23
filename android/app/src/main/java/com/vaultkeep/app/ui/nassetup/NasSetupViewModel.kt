@@ -1,9 +1,7 @@
 package com.vaultkeep.app.ui.nassetup
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vaultkeep.app.data.crypto.DestinationEncryptor
 import com.vaultkeep.app.data.destination.SmbDestination
 import com.vaultkeep.app.data.destination.WebDavDestination
 import com.vaultkeep.app.data.local.BackupSetsPreferences
@@ -17,7 +15,9 @@ import com.vaultkeep.app.domain.model.NasConfig
 import com.vaultkeep.app.domain.model.NasProtocol
 import com.vaultkeep.app.domain.usecase.BackupProgressEvent
 import com.vaultkeep.app.domain.usecase.BackupRunSummary
-import com.vaultkeep.app.domain.usecase.RunAllEnabledBackupsUseCase
+import com.vaultkeep.app.worker.BackupScheduler
+import com.vaultkeep.app.worker.BackupWorker
+import com.vaultkeep.app.worker.toBackupWorkState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -55,12 +55,15 @@ class NasSetupViewModel @Inject constructor(
     private val discovery: NasDiscovery,
     private val backupSetupPreferences: BackupSetupPreferences,
     private val backupSetsPreferences: BackupSetsPreferences,
-    private val runAllEnabledBackupsUseCase: RunAllEnabledBackupsUseCase,
-    private val destinationEncryptor: DestinationEncryptor,
+    private val backupScheduler: BackupScheduler,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(loadInitialState())
     val uiState: StateFlow<NasSetupUiState> = _uiState.asStateFlow()
+
+    init {
+        observeBackupWork()
+    }
 
     private fun loadInitialState(): NasSetupUiState {
         val existing = credentialsStore.load() ?: return NasSetupUiState()
@@ -155,13 +158,31 @@ class NasSetupViewModel @Inject constructor(
     }
 
     /**
+     * Watches the real WorkManager state for this destination's backups — see
+     * [BackupScheduler] for why this isn't just run in this ViewModel's own scope.
+     */
+    private fun observeBackupWork() = viewModelScope.launch {
+        backupScheduler.observe(BackupWorker.UNIQUE_ONE_TIME_PREFIX + BackupWorker.DESTINATION_NAS).collect { workInfo ->
+            val state = workInfo.toBackupWorkState()
+            _uiState.value = _uiState.value.copy(
+                backupRunning = state.isRunning,
+                backupProgress = state.progress ?: _uiState.value.backupProgress.takeIf { state.isRunning },
+                backupSummary = state.summary ?: _uiState.value.backupSummary,
+                backupError = state.error ?: _uiState.value.backupError,
+            )
+        }
+    }
+
+    /**
      * Reuses the source folder already picked in the USB setup flow
      * (Phase 2) and runs the exact same incremental-backup use case against
-     * this NAS destination instead. This is a manual trigger only —
-     * scheduled/background NAS runs aren't wired into BackupWorker yet.
+     * this NAS destination instead.
      */
     fun runBackupNow() {
         val config = buildConfig() ?: return
+        // Make sure what we're about to back up to is actually saved, since the
+        // worker reloads the NAS config from the credentials store, not from this screen's state.
+        credentialsStore.save(config)
         viewModelScope.launch {
             val sourceUriString = backupSetupPreferences.sourceUri.first()
             val anySetEnabled = backupSetsPreferences.isEnabled(BackupSetKind.PHOTOS).first() ||
@@ -176,17 +197,7 @@ class NasSetupViewModel @Inject constructor(
                 backupError = null,
                 noSourceConfigured = false,
             )
-            val destination = destinationEncryptor.wrap(destinationFor(config))
-            try {
-                val summary = runAllEnabledBackupsUseCase.execute(
-                    sourceTreeUri = sourceUriString?.let(Uri::parse),
-                    destination = destination,
-                    onProgress = { event -> _uiState.value = _uiState.value.copy(backupProgress = event) },
-                )
-                _uiState.value = _uiState.value.copy(backupRunning = false, backupSummary = summary)
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(backupRunning = false, backupError = e.message ?: "Backup failed")
-            }
+            backupScheduler.runNowTo(BackupWorker.DESTINATION_NAS)
         }
     }
 

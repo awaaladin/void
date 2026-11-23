@@ -1,6 +1,8 @@
 package com.vaultkeep.app.ui.backupsetup
 
 import android.content.Intent
+import android.net.Uri
+import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -198,10 +200,22 @@ private fun PickerRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            value?.let { "✓ Selected" } ?: "Not selected yet",
+            value?.let { "✓ ${friendlyPathFor(it)}" } ?: "Not selected yet",
             style = MaterialTheme.typography.labelLarge,
             color = if (value != null) VaultColorTokens.Verdigris500 else MaterialTheme.colorScheme.error,
         )
         VoidSecondaryButton(text = if (value == null) "Choose folder" else "Change folder", onClick = onPick)
+    }
+}
+
+/** Turns a SAF tree URI into something a human can read, e.g. "Internal storage/DCIM/Camera". */
+private fun friendlyPathFor(uriString: String): String {
+    return try {
+        val docId = DocumentsContract.getTreeDocumentId(Uri.parse(uriString))
+        val (volume, path) = docId.split(":", limit = 2).let { it[0] to it.getOrNull(1) }
+        val volumeLabel = if (volume == "primary") "Internal storage" else "USB/SD card ($volume)"
+        if (path.isNullOrBlank()) volumeLabel else "$volumeLabel/$path"
+    } catch (e: Exception) {
+        uriString
     }
 }

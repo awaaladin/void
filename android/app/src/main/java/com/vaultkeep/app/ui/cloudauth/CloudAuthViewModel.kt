@@ -1,10 +1,7 @@
 package com.vaultkeep.app.ui.cloudauth
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vaultkeep.app.data.crypto.DestinationEncryptor
-import com.vaultkeep.app.data.destination.CloudDestination
 import com.vaultkeep.app.data.local.BackupSetsPreferences
 import com.vaultkeep.app.data.local.BackupSetupPreferences
 import com.vaultkeep.app.data.local.CloudAuthPreferences
@@ -14,7 +11,9 @@ import com.vaultkeep.app.data.remote.VoidApi
 import com.vaultkeep.app.domain.model.BackupSetKind
 import com.vaultkeep.app.domain.usecase.BackupProgressEvent
 import com.vaultkeep.app.domain.usecase.BackupRunSummary
-import com.vaultkeep.app.domain.usecase.RunAllEnabledBackupsUseCase
+import com.vaultkeep.app.worker.BackupScheduler
+import com.vaultkeep.app.worker.BackupWorker
+import com.vaultkeep.app.worker.toBackupWorkState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,15 +44,19 @@ class CloudAuthViewModel @Inject constructor(
     private val authPreferences: CloudAuthPreferences,
     private val backupSetupPreferences: BackupSetupPreferences,
     private val backupSetsPreferences: BackupSetsPreferences,
-    private val runAllEnabledBackupsUseCase: RunAllEnabledBackupsUseCase,
-    private val destinationEncryptor: DestinationEncryptor,
+    private val backupScheduler: BackupScheduler,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CloudAuthUiState(signedIn = authPreferences.isSignedIn()))
     val uiState: StateFlow<CloudAuthUiState> = _uiState.asStateFlow()
 
+    private var lastUsageRefreshAt = 0
+
     init {
-        if (authPreferences.isSignedIn()) refreshUsage()
+        if (authPreferences.isSignedIn()) {
+            refreshUsage()
+            observeBackupWork()
+        }
     }
 
     fun onUsernameChanged(value: String) = update { it.copy(username = value) }
@@ -78,6 +81,7 @@ class CloudAuthViewModel @Inject constructor(
                 authPreferences.saveTokens(tokens.access, tokens.refresh)
                 _uiState.value = _uiState.value.copy(isSubmitting = false, signedIn = true)
                 refreshUsage()
+                observeBackupWork()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isSubmitting = false, errorMessage = e.message ?: "Registration failed")
             }
@@ -98,6 +102,7 @@ class CloudAuthViewModel @Inject constructor(
                 authPreferences.saveTokens(tokens.access, tokens.refresh)
                 _uiState.value = _uiState.value.copy(isSubmitting = false, signedIn = true)
                 refreshUsage()
+                observeBackupWork()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isSubmitting = false, errorMessage = e.message ?: "Sign-in failed")
             }
@@ -117,6 +122,33 @@ class CloudAuthViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Watches the real WorkManager state for this destination's backups. Enqueued as actual
+     * background work (see [BackupScheduler]) rather than run directly in this ViewModel's
+     * coroutine scope, so it keeps going if this screen closes, the app backgrounds, or the
+     * phone locks — none of which should silently cut off a multi-gigabyte upload.
+     */
+    private fun observeBackupWork() = viewModelScope.launch {
+        backupScheduler.observe(BackupWorker.UNIQUE_ONE_TIME_PREFIX + BackupWorker.DESTINATION_CLOUD).collect { workInfo ->
+            val state = workInfo.toBackupWorkState()
+            _uiState.value = _uiState.value.copy(
+                backupRunning = state.isRunning,
+                backupProgress = state.progress ?: _uiState.value.backupProgress.takeIf { state.isRunning },
+                backupSummary = state.summary ?: _uiState.value.backupSummary,
+                backupError = state.error,
+            )
+            // A big backup can take a long time — refresh the usage readout periodically
+            // so it doesn't look frozen/stuck while it runs, and once more when it finishes.
+            val filesDone = state.progress?.filesDone
+            if (filesDone != null && filesDone - lastUsageRefreshAt >= 20) {
+                lastUsageRefreshAt = filesDone
+                refreshUsage()
+            } else if (state.summary != null) {
+                refreshUsage()
+            }
+        }
+    }
+
     /** Backs up the manually-picked source folder (shared with USB/NAS setup) plus whichever
      * of Photos/Videos are enabled on Home, all to Void Cloud. */
     fun runBackupNow() {
@@ -129,18 +161,8 @@ class CloudAuthViewModel @Inject constructor(
                 return@launch
             }
             _uiState.value = _uiState.value.copy(backupRunning = true, backupSummary = null, backupError = null, noSourceConfigured = false)
-            val destination = destinationEncryptor.wrap(CloudDestination(api = api))
-            try {
-                val summary = runAllEnabledBackupsUseCase.execute(
-                    sourceTreeUri = sourceUriString?.let(Uri::parse),
-                    destination = destination,
-                    onProgress = { event -> _uiState.value = _uiState.value.copy(backupProgress = event) },
-                )
-                _uiState.value = _uiState.value.copy(backupRunning = false, backupSummary = summary)
-                refreshUsage()
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(backupRunning = false, backupError = e.message ?: "Cloud backup failed")
-            }
+            lastUsageRefreshAt = 0
+            backupScheduler.runNowTo(BackupWorker.DESTINATION_CLOUD)
         }
     }
 }
