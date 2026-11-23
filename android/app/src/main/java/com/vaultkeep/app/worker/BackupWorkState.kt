@@ -21,6 +21,7 @@ fun WorkInfo?.toBackupWorkState(): BackupWorkState {
             filesDone = progressData.getInt(BackupWorker.KEY_FILES_DONE, 0),
             totalFiles = total,
             currentFile = progressData.getString(BackupWorker.KEY_CURRENT_FILE) ?: "",
+            bytesDone = 0L,
         )
     }
 

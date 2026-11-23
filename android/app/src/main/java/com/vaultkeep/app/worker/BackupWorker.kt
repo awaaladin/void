@@ -101,35 +101,37 @@ class BackupWorker @AssistedInject constructor(
         }
     }
 
-    private suspend fun buildDestination(kind: String): BackupDestination? = when (kind) {
-        DESTINATION_USB -> {
-            val uriString = preferences.destinationUri.first() ?: return null
-            destinationEncryptor.wrap(
-                UsbDestination(
-                    context = applicationContext,
-                    id = "usb:$uriString",
-                    displayName = "USB/SSD destination",
-                    treeUri = Uri.parse(uriString),
-                ),
-            )
-        }
-        DESTINATION_NAS -> {
-            val config = nasCredentialsStore.load() ?: return null
-            val nasDestination = when (config.protocol) {
-                NasProtocol.SMB -> SmbDestination(config, id = "smb:${config.host}", displayName = config.displayName())
-                NasProtocol.WEBDAV -> WebDavDestination(config, id = "webdav:${config.host}", displayName = config.displayName())
+    private suspend fun buildDestination(kind: String): BackupDestination? {
+        return when (kind) {
+            DESTINATION_USB -> {
+                val uriString = preferences.destinationUri.first() ?: return null
+                destinationEncryptor.wrap(
+                    UsbDestination(
+                        context = applicationContext,
+                        id = "usb:$uriString",
+                        displayName = "USB/SSD destination",
+                        treeUri = Uri.parse(uriString),
+                    ),
+                )
             }
-            destinationEncryptor.wrap(nasDestination)
+            DESTINATION_NAS -> {
+                val config = nasCredentialsStore.load() ?: return null
+                val nasDestination = when (config.protocol) {
+                    NasProtocol.SMB -> SmbDestination(config, id = "smb:${config.host}", displayName = config.displayName())
+                    NasProtocol.WEBDAV -> WebDavDestination(config, id = "webdav:${config.host}", displayName = config.displayName())
+                }
+                destinationEncryptor.wrap(nasDestination)
+            }
+            DESTINATION_CLOUD -> destinationEncryptor.wrap(CloudDestination(api = voidApi))
+            DESTINATION_DRIVE -> {
+                // Non-interactive: Play Services caches the earlier consent and hands back
+                // a fresh token here without a PendingIntent, unless the user revoked access.
+                val outcome = driveAuthManager.authorize()
+                val token = (outcome as? DriveAuthManager.AuthorizeOutcome.Authorized)?.accessToken ?: return null
+                destinationEncryptor.wrap(GoogleDriveDestination(driveApi, driveHttpClient, token))
+            }
+            else -> null
         }
-        DESTINATION_CLOUD -> destinationEncryptor.wrap(CloudDestination(api = voidApi))
-        DESTINATION_DRIVE -> {
-            // Non-interactive: Play Services caches the earlier consent and hands back
-            // a fresh token here without a PendingIntent, unless the user revoked access.
-            val outcome = driveAuthManager.authorize()
-            val token = (outcome as? DriveAuthManager.AuthorizeOutcome.Authorized)?.accessToken ?: return null
-            destinationEncryptor.wrap(GoogleDriveDestination(driveApi, driveHttpClient, token))
-        }
-        else -> null
     }
 
     private fun foregroundInfo(percent: Int, currentFile: String? = null): ForegroundInfo {
