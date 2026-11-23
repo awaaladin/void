@@ -47,5 +47,5 @@ class SchedulingViewModel @Inject constructor(
         scheduler.apply(preferences.settings.first())
     }
 
-    fun runNow() = scheduler.runNow()
+    fun runNow() = viewModelScope.launch { scheduler.runNow() }
 }

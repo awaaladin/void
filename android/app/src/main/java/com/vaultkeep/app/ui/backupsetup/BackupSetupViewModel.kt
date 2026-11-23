@@ -91,6 +91,6 @@ class BackupSetupViewModel @Inject constructor(
     fun startBackup() {
         if (_uiState.value.destinationUri == null) return
         _uiState.value = _uiState.value.copy(isRunning = true, summary = null, errorMessage = null)
-        backupScheduler.runNowTo(BackupWorker.DESTINATION_USB)
+        viewModelScope.launch { backupScheduler.runNowTo(BackupWorker.DESTINATION_USB) }
     }
 }
