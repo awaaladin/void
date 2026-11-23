@@ -50,6 +50,16 @@
              VaultKeepApp.onCreate() does. See receiver/StorageAttachReceiver.kt
              for what this does and does not guarantee. -->
 
+        <!-- WorkManager's own manifest declares this service with no
+             foregroundServiceType, which crashes on Android 14+ the instant
+             BackupWorker calls setForeground(..., FOREGROUND_SERVICE_TYPE_DATA_SYNC):
+             "foregroundServiceType 0x1 is not a subset of ... 0x0". Overriding it
+             here to declare dataSync is what BackupWorker actually needs. -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+
     </application>
 
 </manifest>
